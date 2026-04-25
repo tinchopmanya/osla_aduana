@@ -1,0 +1,11 @@
+.env
+.env.local
+.env.*.local
+node_modules/
+__pycache__/
+*.pyc
+.next/
+.pytest_cache/
+.venv/
+*.dump
+*.sql.bak
