@@ -1,0 +1,211 @@
+{
+  "schema_version": "aduana.v3_s.evidence_item_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_evidence_items_0001",
+  "fixture_purpose": "synthetic evidence references without material document content",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "evidence_items": [
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_intake_note_0001",
+      "source_id": "synthetic.fixture.manual",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:20:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/intake-note-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-intake-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 1.0,
+      "human_validated": false,
+      "sensitivity": "internal",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_only",
+          "no_real_content",
+          "no_network"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_invoice_stub_0001",
+      "source_id": "synthetic.fixture.client_document",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:21:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/invoice-stub-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-invoice-stub-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 0.85,
+      "human_validated": false,
+      "sensitivity": "confidential",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_document_stub",
+          "no_document_body",
+          "no_ocr",
+          "no_embeddings"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_packing_stub_0001",
+      "source_id": "synthetic.fixture.client_document",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:22:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/packing-stub-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-packing-stub-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 0.82,
+      "human_validated": false,
+      "sensitivity": "confidential",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_document_stub",
+          "no_document_body",
+          "no_ocr",
+          "no_embeddings"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_regime_assessment_0001",
+      "source_id": "synthetic.fixture.regimen_engine",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:23:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/regime-assessment-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-regime-assessment-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 0.62,
+      "human_validated": false,
+      "sensitivity": "internal",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "deterministic_offline_fixture",
+          "human_review_required",
+          "no_final_regime",
+          "no_final_ncm"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_voice_allowed_0001",
+      "source_id": "synthetic.fixture.voice_event",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:24:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/voice-allowed-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-voice-allowed-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 0.9,
+      "human_validated": false,
+      "sensitivity": "internal",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_voice_summary",
+          "policy_gate_required",
+          "no_vendor_touched"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_restricted_block_0001",
+      "source_id": "synthetic.fixture.restricted_policy",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:25:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/restricted-block-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-restricted-block-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 1.0,
+      "human_validated": false,
+      "sensitivity": "restricted",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "restricted_fixture",
+          "deny_auto_action",
+          "human_owner_review_required"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.evidence_item.v0",
+      "id": "ev_syn_port_delay_0001",
+      "source_id": "synthetic.fixture.port_event",
+      "source_type": "synthetic_fixture",
+      "captured_at": "2026-05-02T09:26:00-03:00",
+      "source_ref": "fixture://aduana/v3-s/evidence/port-delay-0001",
+      "excerpt_or_hash": "sha256:synthetic-not-real-v3s-port-delay-0001",
+      "model_used": null,
+      "cost_estimate_usd": null,
+      "confidence": 0.78,
+      "human_validated": false,
+      "sensitivity": "internal",
+      "retention_policy": "fixture_only",
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "created_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_port_event_attached_to_trade_case",
+          "no_commercial_provider",
+          "no_external_tracking"
+        ]
+      }
+    }
+  ]
+}

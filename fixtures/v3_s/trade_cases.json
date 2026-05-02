@@ -1,0 +1,523 @@
+{
+  "schema_version": "aduana.v3_s.trade_case_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_trade_cases_0001",
+  "fixture_purpose": "synthetic operational cases for missing documents, review and policy denial",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "trade_cases": [
+    {
+      "schema_version": "aduana.trade_case.v0",
+      "id": "tc_syn_missing_docs_0001",
+      "tenant_id": "tenant_syn_osla",
+      "created_at": "2026-05-02T09:30:00-03:00",
+      "updated_at": "2026-05-02T09:35:00-03:00",
+      "buyer_type": "despachante",
+      "status": "needs_documents",
+      "source_context": {
+        "intake_channel": "synthetic_seed",
+        "source_manifest_id": "sm_syn_client_packet_0001",
+        "is_synthetic": true
+      },
+      "parties": [
+        {
+          "id": "party_syn_importer_0001",
+          "role": "importer",
+          "display_name": "Importador Sintetico SA",
+          "country_code": "UY",
+          "tax_id_ref": "rut_synthetic_redacted",
+          "sensitivity": "internal"
+        },
+        {
+          "id": "party_syn_supplier_0001",
+          "role": "supplier",
+          "display_name": "Proveedor Sintetico Ltd",
+          "country_code": "CN",
+          "tax_id_ref": null,
+          "sensitivity": "internal"
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc_syn_invoice_missing_0001",
+          "document_type": "commercial_invoice",
+          "status": "missing",
+          "evidence_item_id": null,
+          "page_refs": [],
+          "sensitivity": "confidential",
+          "synthetic_note": "Documento faltante; no existe contenido material."
+        },
+        {
+          "id": "doc_syn_packing_missing_0001",
+          "document_type": "packing_list",
+          "status": "missing",
+          "evidence_item_id": null,
+          "page_refs": [],
+          "sensitivity": "confidential",
+          "synthetic_note": "Documento faltante; no existe contenido material."
+        },
+        {
+          "id": "doc_syn_origin_missing_0001",
+          "document_type": "certificate_origin",
+          "status": "missing",
+          "evidence_item_id": null,
+          "page_refs": [],
+          "sensitivity": "confidential",
+          "synthetic_note": "Documento faltante; no existe contenido material."
+        }
+      ],
+      "items": [
+        {
+          "id": "item_syn_missing_docs_0001",
+          "description": "Repuesto industrial sintetico para prueba offline",
+          "quantity": 10,
+          "unit": "unit",
+          "declared_value_usd": 1200,
+          "origin_country_code": "CN",
+          "suggested_ncm": null,
+          "suggested_ncm_confidence": null,
+          "ncm_final": null,
+          "notes": [
+            "No usar como clasificacion real.",
+            "Sin NCM final en fixture."
+          ]
+        }
+      ],
+      "missing_requirements": [
+        {
+          "id": "mr_syn_invoice_0001",
+          "requirement_type": "document",
+          "description": "Falta factura comercial sintetica.",
+          "blocking": true,
+          "owner_role": "importer"
+        },
+        {
+          "id": "mr_syn_packing_0001",
+          "requirement_type": "document",
+          "description": "Falta packing list sintetico.",
+          "blocking": true,
+          "owner_role": "importer"
+        },
+        {
+          "id": "mr_syn_review_0001",
+          "requirement_type": "human_review",
+          "description": "Requiere revision humana antes de cualquier handoff.",
+          "blocking": true,
+          "owner_role": "human_reviewer"
+        }
+      ],
+      "regime_assessment": null,
+      "risks": [
+        {
+          "id": "risk_syn_missing_docs_0001",
+          "risk_type": "missing_document",
+          "severity": "medium",
+          "evidence_item_id": null,
+          "explanation": "No se puede evaluar regimen probable sin documentos minimos."
+        },
+        {
+          "id": "risk_syn_regime_uncertain_0001",
+          "risk_type": "regime_uncertain",
+          "severity": "medium",
+          "evidence_item_id": null,
+          "explanation": "El motor queda en unknown_needs_review hasta completar faltantes."
+        }
+      ],
+      "tasks": [
+        {
+          "id": "task_syn_request_invoice_0001",
+          "title": "Solicitar factura comercial",
+          "status": "open",
+          "owner_role": "importer",
+          "due_at": null,
+          "linked_evidence_item_id": null
+        },
+        {
+          "id": "task_syn_request_packing_0001",
+          "title": "Solicitar packing list",
+          "status": "open",
+          "owner_role": "importer",
+          "due_at": null,
+          "linked_evidence_item_id": null
+        }
+      ],
+      "evidence_item_ids": [
+        "ev_syn_intake_note_0001"
+      ],
+      "evidence_pack_id": null,
+      "timeline": [
+        {
+          "id": "tle_syn_case_created_0001",
+          "occurred_at": "2026-05-02T09:30:00-03:00",
+          "event_type": "case_created",
+          "actor_type": "fixture_generator",
+          "summary": "Caso sintetico creado para faltantes documentales.",
+          "evidence_item_id": "ev_syn_intake_note_0001"
+        },
+        {
+          "id": "tle_syn_docs_requested_0001",
+          "occurred_at": "2026-05-02T09:35:00-03:00",
+          "event_type": "document_requested",
+          "actor_type": "system",
+          "summary": "Se generaron tareas sinteticas para documentos faltantes.",
+          "evidence_item_id": null
+        }
+      ],
+      "human_reviewer_id": null,
+      "audit": {
+        "created_by": "fixture_generator",
+        "last_action_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_only",
+          "needs_documents",
+          "human_review_required"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.trade_case.v0",
+      "id": "tc_syn_ready_review_0002",
+      "tenant_id": "tenant_syn_osla",
+      "created_at": "2026-05-02T09:40:00-03:00",
+      "updated_at": "2026-05-02T09:55:00-03:00",
+      "buyer_type": "importador",
+      "status": "ready_for_review",
+      "source_context": {
+        "intake_channel": "synthetic_seed",
+        "source_manifest_id": "sm_syn_client_packet_0001",
+        "is_synthetic": true
+      },
+      "parties": [
+        {
+          "id": "party_syn_importer_0002",
+          "role": "importer",
+          "display_name": "Importador Sintetico Dos SA",
+          "country_code": "UY",
+          "tax_id_ref": "rut_synthetic_redacted",
+          "sensitivity": "internal"
+        },
+        {
+          "id": "party_syn_forwarder_0002",
+          "role": "forwarder",
+          "display_name": "Forwarder Sintetico SRL",
+          "country_code": "UY",
+          "tax_id_ref": null,
+          "sensitivity": "internal"
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc_syn_invoice_received_0002",
+          "document_type": "commercial_invoice",
+          "status": "accepted_for_review",
+          "evidence_item_id": "ev_syn_invoice_stub_0001",
+          "page_refs": [
+            "fixture-page-1"
+          ],
+          "sensitivity": "confidential",
+          "synthetic_note": "Stub de documento sintetico; no contiene cuerpo documental."
+        },
+        {
+          "id": "doc_syn_packing_received_0002",
+          "document_type": "packing_list",
+          "status": "accepted_for_review",
+          "evidence_item_id": "ev_syn_packing_stub_0001",
+          "page_refs": [
+            "fixture-page-1"
+          ],
+          "sensitivity": "confidential",
+          "synthetic_note": "Stub de documento sintetico; no contiene cuerpo documental."
+        },
+        {
+          "id": "doc_syn_bl_review_0002",
+          "document_type": "bill_of_lading",
+          "status": "needs_review",
+          "evidence_item_id": null,
+          "page_refs": [],
+          "sensitivity": "confidential",
+          "synthetic_note": "Referencia faltante para completar revision humana."
+        }
+      ],
+      "items": [
+        {
+          "id": "item_syn_ready_review_0002",
+          "description": "Componente mecanico sintetico para banco de pruebas",
+          "quantity": 24,
+          "unit": "unit",
+          "declared_value_usd": 2400,
+          "origin_country_code": "BR",
+          "suggested_ncm": null,
+          "suggested_ncm_confidence": null,
+          "ncm_final": null,
+          "notes": [
+            "El fixture evita clasificacion NCM final.",
+            "Regimen probable queda sujeto a revision humana."
+          ]
+        }
+      ],
+      "missing_requirements": [
+        {
+          "id": "mr_syn_bl_review_0002",
+          "requirement_type": "document",
+          "description": "Falta validar documento de transporte sintetico.",
+          "blocking": true,
+          "owner_role": "despachante"
+        },
+        {
+          "id": "mr_syn_human_review_0002",
+          "requirement_type": "human_review",
+          "description": "Confirmar regimen probable con revisor humano.",
+          "blocking": true,
+          "owner_role": "human_reviewer"
+        }
+      ],
+      "regime_assessment": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_general_0002",
+        "trade_case_id": "tc_syn_ready_review_0002",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T09:50:00-03:00",
+        "input_summary": {
+          "buyer_type": "importador",
+          "item_count": 1,
+          "declared_value_usd_total": 2400,
+          "origin_country_codes": [
+            "BR"
+          ],
+          "documents_available": [
+            "commercial_invoice",
+            "packing_list"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "regimen_general",
+            "probability_label": "medium",
+            "rule_hits": [
+              "synthetic_minimum_document_set_present",
+              "no_special_condition_modelled"
+            ],
+            "rule_misses": [
+              "transport_document_not_validated",
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": [
+              "ev_syn_invoice_stub_0001",
+              "ev_syn_packing_stub_0001"
+            ]
+          }
+        ],
+        "selected_probable_regime": "regimen_general",
+        "confidence": 0.62,
+        "missing_inputs": [
+          "transport_document_review",
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: documentacion minima sintetica permite sugerir regimen probable.",
+          "La salida no decide regimen final ni NCM final."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      },
+      "risks": [
+        {
+          "id": "risk_syn_low_confidence_0002",
+          "risk_type": "low_confidence",
+          "severity": "low",
+          "evidence_item_id": "ev_syn_regime_assessment_0001",
+          "explanation": "La confianza es parcial porque falta revision humana."
+        }
+      ],
+      "tasks": [
+        {
+          "id": "task_syn_review_regime_0002",
+          "title": "Revisar regimen probable",
+          "status": "open",
+          "owner_role": "human_reviewer",
+          "due_at": null,
+          "linked_evidence_item_id": "ev_syn_regime_assessment_0001"
+        }
+      ],
+      "evidence_item_ids": [
+        "ev_syn_invoice_stub_0001",
+        "ev_syn_packing_stub_0001",
+        "ev_syn_regime_assessment_0001",
+        "ev_syn_port_delay_0001"
+      ],
+      "evidence_pack_id": "ep_syn_ready_review_0002",
+      "timeline": [
+        {
+          "id": "tle_syn_case_created_0002",
+          "occurred_at": "2026-05-02T09:40:00-03:00",
+          "event_type": "case_created",
+          "actor_type": "fixture_generator",
+          "summary": "Caso sintetico creado con documentos stub.",
+          "evidence_item_id": "ev_syn_intake_note_0001"
+        },
+        {
+          "id": "tle_syn_regime_assessed_0002",
+          "occurred_at": "2026-05-02T09:50:00-03:00",
+          "event_type": "regime_assessed",
+          "actor_type": "system",
+          "summary": "Regimen probable sintetico generado para revision humana.",
+          "evidence_item_id": "ev_syn_regime_assessment_0001"
+        },
+        {
+          "id": "tle_syn_port_event_attached_0002",
+          "occurred_at": "2026-05-02T09:54:00-03:00",
+          "event_type": "evidence_added",
+          "actor_type": "fixture_generator",
+          "summary": "Evento portuario sintetico adjuntado al TradeCase.",
+          "evidence_item_id": "ev_syn_port_delay_0001"
+        }
+      ],
+      "human_reviewer_id": null,
+      "audit": {
+        "created_by": "fixture_generator",
+        "last_action_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_only",
+          "probable_only",
+          "human_review_required",
+          "no_final_ncm",
+          "no_final_regime"
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.trade_case.v0",
+      "id": "tc_syn_policy_block_0003",
+      "tenant_id": "tenant_syn_osla",
+      "created_at": "2026-05-02T10:00:00-03:00",
+      "updated_at": "2026-05-02T10:08:00-03:00",
+      "buyer_type": "forwarder",
+      "status": "waiting_external",
+      "source_context": {
+        "intake_channel": "synthetic_seed",
+        "source_manifest_id": "sm_syn_restricted_probe_0001",
+        "is_synthetic": true
+      },
+      "parties": [
+        {
+          "id": "party_syn_forwarder_0003",
+          "role": "forwarder",
+          "display_name": "Forwarder Sintetico Tres SRL",
+          "country_code": "UY",
+          "tax_id_ref": null,
+          "sensitivity": "internal"
+        }
+      ],
+      "documents": [
+        {
+          "id": "doc_syn_policy_probe_0003",
+          "document_type": "other",
+          "status": "rejected",
+          "evidence_item_id": "ev_syn_restricted_block_0001",
+          "page_refs": [],
+          "sensitivity": "restricted",
+          "synthetic_note": "Intento sintetico bloqueado por policy; sin contenido real."
+        }
+      ],
+      "items": [
+        {
+          "id": "item_syn_policy_block_0003",
+          "description": "Item sintetico bloqueado por fuente restringida",
+          "quantity": 1,
+          "unit": "unit",
+          "declared_value_usd": null,
+          "origin_country_code": null,
+          "suggested_ncm": null,
+          "suggested_ncm_confidence": null,
+          "ncm_final": null,
+          "notes": [
+            "No hay evaluacion de regimen por bloqueo de policy.",
+            "No se usan datos reales ni fuentes externas."
+          ]
+        }
+      ],
+      "missing_requirements": [
+        {
+          "id": "mr_syn_source_owner_0003",
+          "requirement_type": "source_owner_decision",
+          "description": "Requiere decision humana de owner de fuente antes de continuar.",
+          "blocking": true,
+          "owner_role": "osla_source_owner"
+        },
+        {
+          "id": "mr_syn_human_review_0003",
+          "requirement_type": "human_review",
+          "description": "Escalar bloqueo a revisor humano.",
+          "blocking": true,
+          "owner_role": "human_reviewer"
+        }
+      ],
+      "regime_assessment": null,
+      "risks": [
+        {
+          "id": "risk_syn_restricted_source_0003",
+          "risk_type": "restricted_source_attempt",
+          "severity": "high",
+          "evidence_item_id": "ev_syn_restricted_block_0001",
+          "explanation": "La fuente sintetica fue marcada como restringida y queda bloqueada."
+        },
+        {
+          "id": "risk_syn_sensitivity_high_0003",
+          "risk_type": "sensitivity_high",
+          "severity": "high",
+          "evidence_item_id": "ev_syn_restricted_block_0001",
+          "explanation": "La sensibilidad restricted impide accion automatica."
+        }
+      ],
+      "tasks": [
+        {
+          "id": "task_syn_source_owner_review_0003",
+          "title": "Revisar bloqueo de fuente sintetica",
+          "status": "blocked",
+          "owner_role": "human_reviewer",
+          "due_at": null,
+          "linked_evidence_item_id": "ev_syn_restricted_block_0001"
+        }
+      ],
+      "evidence_item_ids": [
+        "ev_syn_restricted_block_0001"
+      ],
+      "evidence_pack_id": null,
+      "timeline": [
+        {
+          "id": "tle_syn_case_created_0003",
+          "occurred_at": "2026-05-02T10:00:00-03:00",
+          "event_type": "case_created",
+          "actor_type": "fixture_generator",
+          "summary": "Caso sintetico creado para probar bloqueo de fuente.",
+          "evidence_item_id": null
+        },
+        {
+          "id": "tle_syn_policy_denied_0003",
+          "occurred_at": "2026-05-02T10:08:00-03:00",
+          "event_type": "policy_denied",
+          "actor_type": "system",
+          "summary": "Policy bloqueo el intento sintetico antes de cualquier accion material.",
+          "evidence_item_id": "ev_syn_restricted_block_0001"
+        }
+      ],
+      "human_reviewer_id": null,
+      "audit": {
+        "created_by": "fixture_generator",
+        "last_action_by": "fixture_generator",
+        "policy_flags": [
+          "synthetic_only",
+          "restricted_source_blocked",
+          "no_material_action",
+          "human_review_required"
+        ]
+      }
+    }
+  ]
+}

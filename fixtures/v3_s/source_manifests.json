@@ -1,0 +1,140 @@
+{
+  "schema_version": "aduana.v3_s.source_manifest_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_source_manifests_0001",
+  "fixture_purpose": "offline_policy_and_validator_seed",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "manifests": [
+    {
+      "schema_version": "aduana.source_manifest.v0",
+      "id": "sm_syn_ftp_blocked_0001",
+      "source_id": "uy.dna.public_ftp",
+      "run_id": "run_syn_ftp_blocked_0001",
+      "run_started_at": "2026-05-02T09:10:00-03:00",
+      "run_finished_at": "2026-05-02T09:10:00-03:00",
+      "mode": "synthetic_fixture",
+      "state": "blocked_until_prereqs_closed",
+      "files_seen": 0,
+      "files_downloaded": 0,
+      "bytes_downloaded": 0,
+      "hashes_changed": 0,
+      "schema_warnings": [
+        "synthetic_manifest_no_remote_listing",
+        "owner_review_required_before_any_metadata_preflight"
+      ],
+      "quarantine_count": 0,
+      "source_policy": {
+        "access_class": "public_restricted",
+        "license_status": "unknown_needs_review",
+        "allowlist_applied": true,
+        "denylist_applied": true,
+        "network_allowed": false,
+        "metadata_preflight_allowed": false,
+        "download_allowed": false,
+        "db_writes_allowed": false,
+        "storage_writes_allowed": false
+      },
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "owner_review_required": true,
+        "human_owner": null,
+        "notes": [
+          "No remote path, URL, credential, file name or directory listing is included.",
+          "This fixture does not enable preflight, download, parse, storage or DB writes."
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.source_manifest.v0",
+      "id": "sm_syn_client_packet_0001",
+      "source_id": "synthetic.client_packet",
+      "run_id": "run_syn_client_packet_0001",
+      "run_started_at": "2026-05-02T09:12:00-03:00",
+      "run_finished_at": "2026-05-02T09:12:00-03:00",
+      "mode": "synthetic_fixture",
+      "state": "completed_offline",
+      "files_seen": 3,
+      "files_downloaded": 0,
+      "bytes_downloaded": 0,
+      "hashes_changed": 0,
+      "schema_warnings": [
+        "synthetic_file_count_only_no_material_content"
+      ],
+      "quarantine_count": 0,
+      "source_policy": {
+        "access_class": "client_provided",
+        "license_status": "not_applicable",
+        "allowlist_applied": true,
+        "denylist_applied": true,
+        "network_allowed": false,
+        "metadata_preflight_allowed": false,
+        "download_allowed": false,
+        "db_writes_allowed": false,
+        "storage_writes_allowed": false
+      },
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "owner_review_required": false,
+        "human_owner": null,
+        "notes": [
+          "Represents a synthetic client packet inventory only.",
+          "No document bytes, OCR output, embeddings or parser output exist in this fixture."
+        ]
+      }
+    },
+    {
+      "schema_version": "aduana.source_manifest.v0",
+      "id": "sm_syn_restricted_probe_0001",
+      "source_id": "synthetic.restricted_source_probe",
+      "run_id": "run_syn_restricted_probe_0001",
+      "run_started_at": "2026-05-02T09:14:00-03:00",
+      "run_finished_at": "2026-05-02T09:14:00-03:00",
+      "mode": "synthetic_fixture",
+      "state": "denied_by_policy",
+      "files_seen": 0,
+      "files_downloaded": 0,
+      "bytes_downloaded": 0,
+      "hashes_changed": 0,
+      "schema_warnings": [
+        "restricted_source_probe_blocked",
+        "denylist_applied_before_any_material_action"
+      ],
+      "quarantine_count": 0,
+      "source_policy": {
+        "access_class": "reserved",
+        "license_status": "denied",
+        "allowlist_applied": false,
+        "denylist_applied": true,
+        "network_allowed": false,
+        "metadata_preflight_allowed": false,
+        "download_allowed": false,
+        "db_writes_allowed": false,
+        "storage_writes_allowed": false
+      },
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      },
+      "audit": {
+        "owner_review_required": true,
+        "human_owner": null,
+        "notes": [
+          "Policy denial fixture for restricted-source attempts.",
+          "No endpoint, reserved content, credential or real identifier is present."
+        ]
+      }
+    }
+  ]
+}

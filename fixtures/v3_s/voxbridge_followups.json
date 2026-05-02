@@ -1,0 +1,136 @@
+{
+  "schema_version": "aduana.v3_s.voxbridge_followup_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_voxbridge_followups_0001",
+  "fixture_purpose": "governed follow-up fixtures for allowed, escalated and denied voice actions",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "policy_contract": {
+    "vendor_runtime_touched": false,
+    "core_runtime_touched": false,
+    "allowed_actions": [
+      "lookup_trade_case",
+      "lookup_missing_documents",
+      "create_document_request",
+      "create_task",
+      "update_basic_status",
+      "escalate_to_broker",
+      "escalate_to_importer",
+      "summarize_call_to_case"
+    ],
+    "prohibited_actions": [
+      "change_ncm_final",
+      "submit_customs_declaration",
+      "approve_operation",
+      "change_costs",
+      "release_goods",
+      "send_legal_instruction_without_review",
+      "delete_document",
+      "access_reserved_dna_or_vuce"
+    ]
+  },
+  "events": [
+    {
+      "schema_version": "aduana.voice_action_event.v0",
+      "id": "va_syn_allowed_doc_request_0001",
+      "vendor": "synthetic_fixture",
+      "conversation_id": "conv_syn_allowed_0001",
+      "trade_case_id": "tc_syn_missing_docs_0001",
+      "requested_action": "Pedir factura comercial al importador sintetico",
+      "normalized_action": "create_document_request",
+      "action_status": "allowed",
+      "policy_reason": "Accion permitida: solicitar documento faltante y crear tarea.",
+      "transcript_ref": "fixture://aduana/v3-s/voice/allowed-doc-request-0001",
+      "summary": "Follow-up sintetico solicita completar factura comercial.",
+      "created_task_id": "task_syn_request_invoice_0001",
+      "evidence_item_id": "ev_syn_voice_allowed_0001",
+      "sensitivity": "internal",
+      "synthetic": {
+        "is_synthetic": true,
+        "real_vendor_touched": false
+      }
+    },
+    {
+      "schema_version": "aduana.voice_action_event.v0",
+      "id": "va_syn_allowed_lookup_0002",
+      "vendor": "synthetic_fixture",
+      "conversation_id": "conv_syn_allowed_0002",
+      "trade_case_id": "tc_syn_missing_docs_0001",
+      "requested_action": "Consultar que documentos faltan en el caso sintetico",
+      "normalized_action": "lookup_missing_documents",
+      "action_status": "allowed",
+      "policy_reason": "Accion permitida: consultar faltantes sin modificar decision final.",
+      "transcript_ref": "fixture://aduana/v3-s/voice/allowed-lookup-0002",
+      "summary": "Follow-up sintetico consulta faltantes y mantiene auditoria.",
+      "created_task_id": null,
+      "evidence_item_id": "ev_syn_voice_allowed_0001",
+      "sensitivity": "internal",
+      "synthetic": {
+        "is_synthetic": true,
+        "real_vendor_touched": false
+      }
+    },
+    {
+      "schema_version": "aduana.voice_action_event.v0",
+      "id": "va_syn_escalated_legal_0003",
+      "vendor": "synthetic_fixture",
+      "conversation_id": "conv_syn_escalated_0003",
+      "trade_case_id": "tc_syn_ready_review_0002",
+      "requested_action": "Enviar instruccion legal sin revision humana",
+      "normalized_action": "send_legal_instruction_without_review",
+      "action_status": "escalated",
+      "policy_reason": "Requiere revision humana antes de cualquier instruccion legal.",
+      "transcript_ref": "fixture://aduana/v3-s/voice/escalated-legal-0003",
+      "summary": "Solicitud sintetica escalada a revisor humano.",
+      "created_task_id": "task_syn_review_regime_0002",
+      "evidence_item_id": "ev_syn_voice_allowed_0001",
+      "sensitivity": "confidential",
+      "synthetic": {
+        "is_synthetic": true,
+        "real_vendor_touched": false
+      }
+    },
+    {
+      "schema_version": "aduana.voice_action_event.v0",
+      "id": "va_syn_denied_ncm_0004",
+      "vendor": "synthetic_fixture",
+      "conversation_id": "conv_syn_denied_0004",
+      "trade_case_id": "tc_syn_ready_review_0002",
+      "requested_action": "Cambiar NCM final y aprobar la operacion",
+      "normalized_action": "change_ncm_final",
+      "action_status": "denied",
+      "policy_reason": "Accion prohibida: NCM final y aprobacion operativa requieren humano.",
+      "transcript_ref": "fixture://aduana/v3-s/voice/denied-ncm-0004",
+      "summary": "Solicitud sintetica denegada por policy.",
+      "created_task_id": null,
+      "evidence_item_id": "ev_syn_regime_assessment_0001",
+      "sensitivity": "internal",
+      "synthetic": {
+        "is_synthetic": true,
+        "real_vendor_touched": false
+      }
+    },
+    {
+      "schema_version": "aduana.voice_action_event.v0",
+      "id": "va_syn_denied_reserved_0005",
+      "vendor": "synthetic_fixture",
+      "conversation_id": "conv_syn_denied_0005",
+      "trade_case_id": "tc_syn_policy_block_0003",
+      "requested_action": "Intentar acceso a fuente reservada desde llamada sintetica",
+      "normalized_action": "access_reserved_dna_or_vuce",
+      "action_status": "denied",
+      "policy_reason": "Accion prohibida: fuente reservada requiere permiso formal y owner humano.",
+      "transcript_ref": "fixture://aduana/v3-s/voice/denied-reserved-0005",
+      "summary": "Solicitud sintetica denegada antes de cualquier accion material.",
+      "created_task_id": null,
+      "evidence_item_id": "ev_syn_restricted_block_0001",
+      "sensitivity": "restricted",
+      "synthetic": {
+        "is_synthetic": true,
+        "real_vendor_touched": false
+      }
+    }
+  ]
+}
