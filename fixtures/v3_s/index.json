@@ -1,0 +1,64 @@
+{
+  "schema_version": "aduana.v3_s.fixture_index.v0",
+  "fixture_pack_id": "aduana_v3_s_offline_pack_0001",
+  "created_at": "2026-05-02T09:00:00-03:00",
+  "product_name": "Trade Evidence Desk / Aduana Control Tower",
+  "purpose": "Synthetic offline fixtures for validators and contract tests.",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "offline_guards": {
+    "network_allowed": false,
+    "ftp_allowed": false,
+    "metadata_preflight_allowed": false,
+    "downloads_allowed": false,
+    "db_writes_allowed": false,
+    "storage_writes_allowed": false,
+    "ocr_allowed": false,
+    "embeddings_allowed": false,
+    "declares_download_approval": false,
+    "automatic_ncm_final_allowed": false,
+    "automatic_regime_final_allowed": false
+  },
+  "files": [
+    {
+      "path": "fixtures/v3_s/source_manifests.json",
+      "fixture_kind": "SourceManifest",
+      "records": 3
+    },
+    {
+      "path": "fixtures/v3_s/evidence_items.json",
+      "fixture_kind": "EvidenceItem",
+      "records": 7
+    },
+    {
+      "path": "fixtures/v3_s/trade_cases.json",
+      "fixture_kind": "TradeCase",
+      "records": 3
+    },
+    {
+      "path": "fixtures/v3_s/regimen_engine_scenarios.json",
+      "fixture_kind": "RegimenEngineInputExpectedOutput",
+      "records": 6
+    },
+    {
+      "path": "fixtures/v3_s/docintel_missing_requirements.json",
+      "fixture_kind": "DocIntelMissingRequirements",
+      "records": 3
+    },
+    {
+      "path": "fixtures/v3_s/voxbridge_followups.json",
+      "fixture_kind": "VoiceActionEvent",
+      "records": 5
+    }
+  ],
+  "validator_notes": [
+    "All IDs use synthetic prefixes.",
+    "All final_decision.ncm_final values are null.",
+    "All final_decision.regime_final values are null.",
+    "All SourceManifest records use mode synthetic_fixture and zero downloaded bytes.",
+    "All VoiceActionEvent records use vendor synthetic_fixture and real_vendor_touched false."
+  ]
+}

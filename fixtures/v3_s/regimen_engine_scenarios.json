@@ -1,0 +1,544 @@
+{
+  "schema_version": "aduana.v3_s.regimen_engine_scenario_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_regimen_engine_0001",
+  "fixture_purpose": "deterministic offline RegimenEngine input and expected output",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "engine_contract": {
+    "engine_version": "regimen_engine.v0.offline",
+    "uses_network": false,
+    "uses_ocr": false,
+    "uses_embeddings": false,
+    "uses_llm": false,
+    "writes_ncm_final": false,
+    "writes_regime_final": false,
+    "disclaimer": "human_review_required_no_legal_advice"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "reg_syn_unknown_missing_docs_0001",
+      "title": "Missing minimum documents returns unknown_needs_review",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_missing_docs_0001",
+        "buyer_type": "despachante",
+        "item_count": 1,
+        "declared_value_usd_total": 1200,
+        "origin_country_codes": [
+          "CN"
+        ],
+        "documents_available": [],
+        "missing_requirements": [
+          "commercial_invoice",
+          "packing_list",
+          "human_broker_review"
+        ],
+        "items": [
+          {
+            "id": "item_syn_missing_docs_0001",
+            "description": "Repuesto industrial sintetico para prueba offline",
+            "declared_value_usd": 1200,
+            "origin_country_code": "CN",
+            "ncm_final": null
+          }
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_unknown_0001",
+        "trade_case_id": "tc_syn_missing_docs_0001",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:20:00-03:00",
+        "input_summary": {
+          "buyer_type": "despachante",
+          "item_count": 1,
+          "declared_value_usd_total": 1200,
+          "origin_country_codes": [
+            "CN"
+          ],
+          "documents_available": []
+        },
+        "candidate_regimes": [
+          {
+            "code": "unknown_needs_review",
+            "probability_label": "high",
+            "rule_hits": [
+              "missing_commercial_invoice",
+              "missing_packing_list"
+            ],
+            "rule_misses": [
+              "cannot_confirm_general_regime"
+            ],
+            "required_evidence_item_ids": []
+          }
+        ],
+        "selected_probable_regime": "unknown_needs_review",
+        "confidence": 0.2,
+        "missing_inputs": [
+          "commercial_invoice",
+          "packing_list",
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: faltan documentos minimos para sugerir regimen probable.",
+          "La salida no decide regimen final ni NCM final."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    },
+    {
+      "scenario_id": "reg_syn_general_probable_0002",
+      "title": "Minimum synthetic evidence suggests regimen_general as probable",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_ready_review_0002",
+        "buyer_type": "importador",
+        "item_count": 1,
+        "declared_value_usd_total": 2400,
+        "origin_country_codes": [
+          "BR"
+        ],
+        "documents_available": [
+          "commercial_invoice",
+          "packing_list"
+        ],
+        "missing_requirements": [
+          "transport_document_review",
+          "human_broker_review"
+        ],
+        "items": [
+          {
+            "id": "item_syn_ready_review_0002",
+            "description": "Componente mecanico sintetico para banco de pruebas",
+            "declared_value_usd": 2400,
+            "origin_country_code": "BR",
+            "ncm_final": null
+          }
+        ],
+        "evidence_item_ids": [
+          "ev_syn_invoice_stub_0001",
+          "ev_syn_packing_stub_0001"
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_general_0002",
+        "trade_case_id": "tc_syn_ready_review_0002",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:22:00-03:00",
+        "input_summary": {
+          "buyer_type": "importador",
+          "item_count": 1,
+          "declared_value_usd_total": 2400,
+          "origin_country_codes": [
+            "BR"
+          ],
+          "documents_available": [
+            "commercial_invoice",
+            "packing_list"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "regimen_general",
+            "probability_label": "medium",
+            "rule_hits": [
+              "synthetic_minimum_document_set_present",
+              "no_special_condition_modelled"
+            ],
+            "rule_misses": [
+              "transport_document_not_validated",
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": [
+              "ev_syn_invoice_stub_0001",
+              "ev_syn_packing_stub_0001"
+            ]
+          }
+        ],
+        "selected_probable_regime": "regimen_general",
+        "confidence": 0.62,
+        "missing_inputs": [
+          "transport_document_review",
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: evidencia sintetica minima permite sugerencia probable.",
+          "Requiere revision humana antes de cualquier decision operativa."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    },
+    {
+      "scenario_id": "reg_syn_courier_probable_0003",
+      "title": "Courier-shaped synthetic case remains probable only",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_reg_courier_0003",
+        "buyer_type": "courier",
+        "item_count": 1,
+        "declared_value_usd_total": 160,
+        "origin_country_codes": [
+          "US"
+        ],
+        "documents_available": [
+          "commercial_invoice",
+          "airway_bill"
+        ],
+        "missing_requirements": [
+          "human_broker_review"
+        ],
+        "items": [
+          {
+            "id": "item_syn_courier_0003",
+            "description": "Accesorio sintetico de bajo valor para caso courier",
+            "declared_value_usd": 160,
+            "origin_country_code": "US",
+            "ncm_final": null
+          }
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_courier_0003",
+        "trade_case_id": "tc_syn_reg_courier_0003",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:24:00-03:00",
+        "input_summary": {
+          "buyer_type": "courier",
+          "item_count": 1,
+          "declared_value_usd_total": 160,
+          "origin_country_codes": [
+            "US"
+          ],
+          "documents_available": [
+            "commercial_invoice",
+            "airway_bill"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "courier",
+            "probability_label": "medium",
+            "rule_hits": [
+              "buyer_type_courier",
+              "synthetic_airway_bill_present"
+            ],
+            "rule_misses": [
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": []
+          }
+        ],
+        "selected_probable_regime": "courier",
+        "confidence": 0.58,
+        "missing_inputs": [
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: caso con forma courier para probar branch del motor.",
+          "No calcula tributos ni emite decision final."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    },
+    {
+      "scenario_id": "reg_syn_franquicia_probable_0004",
+      "title": "Franquicia branch uses synthetic personal-use signal",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_reg_franquicia_0004",
+        "buyer_type": "importador",
+        "item_count": 1,
+        "declared_value_usd_total": 180,
+        "origin_country_codes": [
+          "US"
+        ],
+        "documents_available": [
+          "commercial_invoice",
+          "receipt"
+        ],
+        "missing_requirements": [
+          "human_broker_review"
+        ],
+        "synthetic_signals": [
+          "personal_use_claimed_by_fixture"
+        ],
+        "items": [
+          {
+            "id": "item_syn_franquicia_0004",
+            "description": "Objeto sintetico de uso personal declarado en fixture",
+            "declared_value_usd": 180,
+            "origin_country_code": "US",
+            "ncm_final": null
+          }
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_franquicia_0004",
+        "trade_case_id": "tc_syn_reg_franquicia_0004",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:26:00-03:00",
+        "input_summary": {
+          "buyer_type": "importador",
+          "item_count": 1,
+          "declared_value_usd_total": 180,
+          "origin_country_codes": [
+            "US"
+          ],
+          "documents_available": [
+            "commercial_invoice",
+            "receipt"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "franquicia",
+            "probability_label": "medium",
+            "rule_hits": [
+              "synthetic_personal_use_signal",
+              "synthetic_low_value_bucket"
+            ],
+            "rule_misses": [
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": []
+          }
+        ],
+        "selected_probable_regime": "franquicia",
+        "confidence": 0.55,
+        "missing_inputs": [
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: prueba rama franquicia con seniales sinteticas.",
+          "La rama es preliminar y debe ser revisada por humano."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    },
+    {
+      "scenario_id": "reg_syn_iva_probable_0005",
+      "title": "IVA branch is represented as a fixture label only",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_reg_iva_0005",
+        "buyer_type": "marketplace",
+        "item_count": 2,
+        "declared_value_usd_total": 95,
+        "origin_country_codes": [
+          "UY"
+        ],
+        "documents_available": [
+          "commercial_invoice"
+        ],
+        "missing_requirements": [
+          "packing_list",
+          "human_broker_review"
+        ],
+        "synthetic_signals": [
+          "iva_branch_fixture_label"
+        ],
+        "items": [
+          {
+            "id": "item_syn_iva_0005_a",
+            "description": "Item sintetico A para rama IVA",
+            "declared_value_usd": 45,
+            "origin_country_code": "UY",
+            "ncm_final": null
+          },
+          {
+            "id": "item_syn_iva_0005_b",
+            "description": "Item sintetico B para rama IVA",
+            "declared_value_usd": 50,
+            "origin_country_code": "UY",
+            "ncm_final": null
+          }
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_iva_0005",
+        "trade_case_id": "tc_syn_reg_iva_0005",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:28:00-03:00",
+        "input_summary": {
+          "buyer_type": "marketplace",
+          "item_count": 2,
+          "declared_value_usd_total": 95,
+          "origin_country_codes": [
+            "UY"
+          ],
+          "documents_available": [
+            "commercial_invoice"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "iva",
+            "probability_label": "medium",
+            "rule_hits": [
+              "iva_branch_fixture_label"
+            ],
+            "rule_misses": [
+              "packing_list_missing",
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": []
+          }
+        ],
+        "selected_probable_regime": "iva",
+        "confidence": 0.5,
+        "missing_inputs": [
+          "packing_list",
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: cubre etiqueta de rama IVA sin liquidacion.",
+          "No interpreta normativa ni calcula importe definitivo."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    },
+    {
+      "scenario_id": "reg_syn_sesenta_probable_0006",
+      "title": "Sesenta por ciento branch remains a governed probable output",
+      "input": {
+        "schema_version": "aduana.regime_engine_input.v0",
+        "trade_case_id": "tc_syn_reg_sesenta_0006",
+        "buyer_type": "importador",
+        "item_count": 1,
+        "declared_value_usd_total": 310,
+        "origin_country_codes": [
+          "ES"
+        ],
+        "documents_available": [
+          "commercial_invoice",
+          "packing_list"
+        ],
+        "missing_requirements": [
+          "human_broker_review"
+        ],
+        "synthetic_signals": [
+          "sesenta_por_ciento_branch_fixture_label"
+        ],
+        "items": [
+          {
+            "id": "item_syn_sesenta_0006",
+            "description": "Item sintetico para rama sesenta por ciento",
+            "declared_value_usd": 310,
+            "origin_country_code": "ES",
+            "ncm_final": null
+          }
+        ],
+        "synthetic": {
+          "is_synthetic": true,
+          "generator": "aduana_v3_s_fixture_builder",
+          "real_source_touched": false
+        }
+      },
+      "expected_output": {
+        "schema_version": "aduana.regime_assessment.v0",
+        "assessment_id": "ra_syn_sesenta_0006",
+        "trade_case_id": "tc_syn_reg_sesenta_0006",
+        "engine_version": "regimen_engine.v0.offline",
+        "created_at": "2026-05-02T10:30:00-03:00",
+        "input_summary": {
+          "buyer_type": "importador",
+          "item_count": 1,
+          "declared_value_usd_total": 310,
+          "origin_country_codes": [
+            "ES"
+          ],
+          "documents_available": [
+            "commercial_invoice",
+            "packing_list"
+          ]
+        },
+        "candidate_regimes": [
+          {
+            "code": "sesenta_por_ciento",
+            "probability_label": "medium",
+            "rule_hits": [
+              "sesenta_por_ciento_branch_fixture_label",
+              "synthetic_minimum_document_set_present"
+            ],
+            "rule_misses": [
+              "human_review_not_completed"
+            ],
+            "required_evidence_item_ids": []
+          }
+        ],
+        "selected_probable_regime": "sesenta_por_ciento",
+        "confidence": 0.53,
+        "missing_inputs": [
+          "human_broker_review"
+        ],
+        "explanation": [
+          "Fixture offline: cubre rama sesenta_por_ciento como probable.",
+          "No sustituye criterio humano ni cierra regimen final."
+        ],
+        "disclaimer": "human_review_required_no_legal_advice",
+        "final_decision": {
+          "ncm_final": null,
+          "regime_final": null,
+          "decided_by": null
+        }
+      }
+    }
+  ]
+}

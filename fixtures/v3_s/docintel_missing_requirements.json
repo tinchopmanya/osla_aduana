@@ -1,0 +1,206 @@
+{
+  "schema_version": "aduana.v3_s.docintel_missing_pack.v0",
+  "fixture_pack_id": "aduana_v3_s_docintel_missing_0001",
+  "fixture_purpose": "DocIntel gap-analysis fixtures without OCR, parsers or material document content",
+  "docintel_mode": "offline_gap_analysis_fixture",
+  "synthetic": {
+    "is_synthetic": true,
+    "generator": "aduana_v3_s_fixture_builder",
+    "real_source_touched": false
+  },
+  "material_processing": {
+    "document_content_available": false,
+    "ocr_allowed": false,
+    "parser_allowed": false,
+    "embeddings_allowed": false,
+    "model_extraction_allowed": false,
+    "db_writes_allowed": false,
+    "storage_writes_allowed": false
+  },
+  "scenarios": [
+    {
+      "scenario_id": "di_syn_missing_invoice_pack_0001",
+      "trade_case_id": "tc_syn_missing_docs_0001",
+      "input_inventory": [
+        {
+          "document_type": "commercial_invoice",
+          "status": "missing",
+          "evidence_item_id": null,
+          "sensitivity": "confidential"
+        },
+        {
+          "document_type": "packing_list",
+          "status": "missing",
+          "evidence_item_id": null,
+          "sensitivity": "confidential"
+        },
+        {
+          "document_type": "certificate_origin",
+          "status": "missing",
+          "evidence_item_id": null,
+          "sensitivity": "confidential"
+        }
+      ],
+      "expected_missing_requirements": [
+        {
+          "id": "mr_syn_invoice_0001",
+          "requirement_type": "document",
+          "description": "Falta factura comercial sintetica.",
+          "blocking": true,
+          "owner_role": "importer"
+        },
+        {
+          "id": "mr_syn_packing_0001",
+          "requirement_type": "document",
+          "description": "Falta packing list sintetico.",
+          "blocking": true,
+          "owner_role": "importer"
+        },
+        {
+          "id": "mr_syn_origin_0001",
+          "requirement_type": "document",
+          "description": "Falta certificado de origen sintetico si aplica al flujo humano.",
+          "blocking": false,
+          "owner_role": "despachante"
+        }
+      ],
+      "expected_tasks": [
+        {
+          "id": "task_syn_request_invoice_0001",
+          "title": "Solicitar factura comercial",
+          "status": "open",
+          "owner_role": "importer",
+          "due_at": null,
+          "linked_evidence_item_id": null
+        },
+        {
+          "id": "task_syn_request_packing_0001",
+          "title": "Solicitar packing list",
+          "status": "open",
+          "owner_role": "importer",
+          "due_at": null,
+          "linked_evidence_item_id": null
+        }
+      ],
+      "expected_policy_flags": [
+        "gap_analysis_only",
+        "no_ocr",
+        "no_embeddings",
+        "no_document_body"
+      ],
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      }
+    },
+    {
+      "scenario_id": "di_syn_transport_review_0002",
+      "trade_case_id": "tc_syn_ready_review_0002",
+      "input_inventory": [
+        {
+          "document_type": "commercial_invoice",
+          "status": "accepted_for_review",
+          "evidence_item_id": "ev_syn_invoice_stub_0001",
+          "sensitivity": "confidential"
+        },
+        {
+          "document_type": "packing_list",
+          "status": "accepted_for_review",
+          "evidence_item_id": "ev_syn_packing_stub_0001",
+          "sensitivity": "confidential"
+        },
+        {
+          "document_type": "bill_of_lading",
+          "status": "needs_review",
+          "evidence_item_id": null,
+          "sensitivity": "confidential"
+        }
+      ],
+      "expected_missing_requirements": [
+        {
+          "id": "mr_syn_bl_review_0002",
+          "requirement_type": "document",
+          "description": "Falta validar documento de transporte sintetico.",
+          "blocking": true,
+          "owner_role": "despachante"
+        },
+        {
+          "id": "mr_syn_human_review_0002",
+          "requirement_type": "human_review",
+          "description": "Confirmar regimen probable con revisor humano.",
+          "blocking": true,
+          "owner_role": "human_reviewer"
+        }
+      ],
+      "expected_tasks": [
+        {
+          "id": "task_syn_review_regime_0002",
+          "title": "Revisar regimen probable",
+          "status": "open",
+          "owner_role": "human_reviewer",
+          "due_at": null,
+          "linked_evidence_item_id": "ev_syn_regime_assessment_0001"
+        }
+      ],
+      "expected_policy_flags": [
+        "gap_analysis_only",
+        "stub_evidence_only",
+        "human_review_required"
+      ],
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      }
+    },
+    {
+      "scenario_id": "di_syn_restricted_blocks_auto_0003",
+      "trade_case_id": "tc_syn_policy_block_0003",
+      "input_inventory": [
+        {
+          "document_type": "other",
+          "status": "rejected",
+          "evidence_item_id": "ev_syn_restricted_block_0001",
+          "sensitivity": "restricted"
+        }
+      ],
+      "expected_missing_requirements": [
+        {
+          "id": "mr_syn_source_owner_0003",
+          "requirement_type": "source_owner_decision",
+          "description": "Requiere decision humana de owner de fuente antes de continuar.",
+          "blocking": true,
+          "owner_role": "osla_source_owner"
+        },
+        {
+          "id": "mr_syn_human_review_0003",
+          "requirement_type": "human_review",
+          "description": "Escalar bloqueo a revisor humano.",
+          "blocking": true,
+          "owner_role": "human_reviewer"
+        }
+      ],
+      "expected_tasks": [
+        {
+          "id": "task_syn_source_owner_review_0003",
+          "title": "Revisar bloqueo de fuente sintetica",
+          "status": "blocked",
+          "owner_role": "human_reviewer",
+          "due_at": null,
+          "linked_evidence_item_id": "ev_syn_restricted_block_0001"
+        }
+      ],
+      "expected_policy_flags": [
+        "restricted_fixture",
+        "deny_auto_action",
+        "human_owner_review_required"
+      ],
+      "synthetic": {
+        "is_synthetic": true,
+        "generator": "aduana_v3_s_fixture_builder",
+        "real_source_touched": false
+      }
+    }
+  ]
+}
