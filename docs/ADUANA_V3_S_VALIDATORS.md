@@ -9,11 +9,11 @@ Este corte agrega `tests/test_v3_s_fixtures_policy.py` como policy gate offline 
 
 El validador solo lee JSON locales si existen. No crea ni edita fixtures, no abre endpoints, no lista FTP, no descarga datos, no escribe DB/storage y no corre OCR/embeddings.
 
-## 2. Gap actual
+## 2. Estado actual
 
-En este worktree, `fixtures/v3_s` existe como carpeta, pero todavia no hay JSON directos bajo `fixtures/v3_s/*.json`. El primer test falla explicitamente hasta que el agente Aduana Fixture Builder entregue los fixtures sinteticos.
+Este PR ya incluye JSON directos bajo `fixtures/v3_s/*.json`. El validador recorre ese pack local y falla si falta la carpeta, si no hay JSON, o si aparece cualquier marcador material.
 
-Ese fallo es intencional: este agente no crea ni edita `fixtures/v3_s/*.json`.
+El validador no crea ni edita `fixtures/v3_s/*.json`; solo los lee. La ejecucion completa queda lista para un entorno que tenga `pytest`. En este corte, el repositorio local no tiene `pytest` instalado, por lo que el merge owner ejecuto validacion directa offline de las funciones `test_*` con stub minimo de `pytest`.
 
 ## 3. Reglas ejecutables
 
@@ -92,13 +92,11 @@ Si el repo no tiene `.venv`, usar el `python -m pytest` disponible en el entorno
 
 ### P0
 
-- `fixtures/v3_s` no tiene JSON directos en este worktree.
-- Sin fixtures materializados, el suite solo puede validar el gap estructural.
 - Cualquier fixture con red/FTP real, credenciales, datos reales, DB/storage writes, OCR/embeddings, `ncm_final` o `regime_final` no nulos debe fallar.
 
 ### P1
 
-- Cuando lleguen fixtures, revisar falsos positivos en datos sinteticos de identidad y ajustar solo dentro del test.
+- Revisar falsos positivos en datos sinteticos de identidad y ajustar solo dentro del test si el pack crece.
 - Ampliar casos VoxBridge denied/escalated si el fixture pack agrega nuevas acciones prohibidas.
 - Agregar convenciones finales de nombres si el Fixture Builder formaliza mas tipos de objeto.
 

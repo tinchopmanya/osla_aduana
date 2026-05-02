@@ -92,7 +92,6 @@ VoxBridge coordina faltantes y handoff; no decide NCM final, regimen final, libe
 
 ### P0
 
-- Los validators ejecutables aun viven fuera de este ownership.
 - No existe CI local en este repo que bloquee red o operaciones materiales.
 - No existe schema ejecutable versionado para rechazar `ncm_final` o `regime_final` no nulos.
 - `SourceManifest` para `uy.dna.public_ftp` queda bloqueado hasta decision humana y prerequisitos de Data Broker.
@@ -101,7 +100,7 @@ VoxBridge coordina faltantes y handoff; no decide NCM final, regimen final, libe
 ### P1
 
 - Convertir los contratos V3-R/V3-S a schemas ejecutables.
-- Agregar tests que recorran recursivamente todos los JSON de `fixtures/v3_s`.
+- Mantener y ampliar `tests/test_v3_s_fixtures_policy.py` como validador offline de todos los JSON de `fixtures/v3_s`.
 - Expandir matriz de documentos y sensibilidad por tipo.
 - Agregar mas escenarios VoxBridge para `denied`, `escalated` y sensibilidad `pii`.
 - Agregar snapshot de evidence pack completo cuando exista contrato.
