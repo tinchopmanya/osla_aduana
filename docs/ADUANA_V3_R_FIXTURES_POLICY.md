@@ -332,12 +332,11 @@ Primer paquete de tests offline:
 
 ### P0
 
-- La policy aun no esta implementada como validador ejecutable.
-- No existen fixtures materializados en carpeta de tests.
+- Estado historico V3-R: la policy no estaba implementada como validador ejecutable en este corte.
+- Estado actualizado V3-S: `fixtures/v3_s/*.json` y `tests/test_v3_s_fixtures_policy.py` materializan fixtures y validator offline. Este documento queda subordinado a `docs/ADUANA_V3_S_FIXTURES.md` y `docs/ADUANA_V3_S_VALIDATORS.md`.
 - No existe CI que bloquee red o descargas.
 - No existe detector automatizado de contenido real o secretos.
-- No existe policy gate ejecutable para VoxBridge.
-- No existe validador que fuerce `ncm_final = null` y `regime_final = null`.
+- V3-S agrega policy gate offline para VoxBridge, `ncm_final = null` y `regime_final = null`; el gap restante es CI/schema versionado, no la ausencia total de validator.
 
 ### P1
 
