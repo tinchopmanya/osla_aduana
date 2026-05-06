@@ -7,10 +7,12 @@ name = "osla-aduana"
 version = "0.1.0"
 description = "Offline Aduana runtime contracts for OSLA"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "osla-core @ git+https://github.com/tinchopmanya/osla-core.git@0dee8c3c5adf7de8f0452e47853fb55fc412d0f5",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4"]
+dev = ["pytest>=7.4", "ruff>=0.2"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
