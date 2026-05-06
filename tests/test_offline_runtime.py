@@ -9,7 +9,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from osla_aduana import AduanaDataLake, EvidenceItem, SourceManifest  # noqa: E402
+from osla_aduana import AduanaDataLake, EvidenceItem, SourceManifest, build_trade_case_guardrails  # noqa: E402
 from osla_aduana.offline_runtime import ContractError  # noqa: E402
 
 
@@ -56,6 +56,24 @@ def test_loader_builds_trade_case_from_gold_pointers(tmp_path: Path) -> None:
     assert case.automatic_decision is False
     assert case.source_context.raw_payload_embedded is False
     assert case.evidence_item_ids == ("evidence:test:000001",)
+    assert case.core_guardrails["contract_version"] == "aduana-core-guardrails-v0"
+    assert case.core_guardrails["modelops"]["selected_model_id"] == "frontier-review"
+    assert case.core_guardrails["modelops"]["human_review_required"] is True
+    assert case.core_guardrails["voxbridge"]["policy_status"] == "allowed"
+    assert case.core_guardrails["data_broker"]["material_operation_allowed"] is False
+    assert case.core_guardrails["domain_controls"]["human_review_required"] is True
+
+
+def test_loader_rejects_evidence_without_source_manifest(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(ContractError, match="unknown SourceManifest"):
+        lake.build_trade_case_from_evidence()
 
 
 def test_real_datalake_smoke_if_present() -> None:
@@ -73,6 +91,23 @@ def test_real_datalake_smoke_if_present() -> None:
     assert summary["db_writes"] == 0
     assert len(case.evidence_item_ids) == 5
     assert len(case.source_context.source_manifest_ids) >= 1
+    assert case.core_guardrails["data_broker"]["source_key"] == "uy.dna.public_ftp"
+
+
+def test_trade_case_guardrails_are_side_effect_free() -> None:
+    case_payload = _trade_case_for_guardrail_test()
+    guardrails = build_trade_case_guardrails(trade_case=case_payload)
+
+    assert guardrails["contract_version"] == "aduana-core-guardrails-v0"
+    assert guardrails["automatic_decision"] is False
+    assert guardrails["modelops"]["model_route_status"] == "model_selected"
+    assert guardrails["modelops"]["selected_model_id"] == "frontier-review"
+    assert guardrails["voxbridge"]["action"] == "lookup_trade_case"
+    assert guardrails["data_broker"]["metadata_only"] is True
+    assert guardrails["data_broker"]["raw_payload_included"] is False
+    assert guardrails["codeguard"]["direct_model_call_allowed"] is False
+    assert guardrails["domain_controls"]["final_ncm_allowed"] is False
+    assert guardrails["domain_controls"]["final_regime_allowed"] is False
 
 
 def _source_manifest() -> dict[str, object]:
@@ -107,3 +142,19 @@ def _evidence_item() -> dict[str, object]:
         "raw_xml_copied_to_gold": False,
         "automatic_decision": False,
     }
+
+
+def _trade_case_for_guardrail_test():
+    from osla_aduana.offline_runtime import TradeCase, TradeCaseSourceContext
+
+    return TradeCase(
+        trade_case_id="trade_case:synthetic:guardrail",
+        status="ready_for_review",
+        source_context=TradeCaseSourceContext(
+            intake_channel="synthetic_offline_test",
+            source_run_id="run:synthetic:guardrail",
+            source_key="uy.dna.public_ftp",
+            source_manifest_ids=("source:test",),
+        ),
+        evidence_item_ids=("evidence:test:000001",),
+    )

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
+
+from osla_aduana.core_guardrails import build_trade_case_guardrails
 
 
 DEFAULT_DATALAKE_ROOT = Path(r"C:\dev\osla_datalake\aduana")
@@ -132,6 +134,7 @@ class TradeCase:
     source_context: TradeCaseSourceContext
     evidence_item_ids: tuple[str, ...]
     tasks: tuple[str, ...] = field(default_factory=tuple)
+    core_guardrails: dict[str, Any] = field(default_factory=dict)
     automatic_decision: bool = False
     db_writes: int = 0
 
@@ -177,7 +180,11 @@ class AduanaDataLake:
         if limit is not None:
             evidence = evidence[:limit]
         source_manifest_ids = tuple(sorted({item.source_manifest_id for item in evidence}))
-        return TradeCase(
+        known_manifest_ids = {item.source_manifest_id for item in manifests}
+        missing_manifest_ids = sorted(set(source_manifest_ids) - known_manifest_ids)
+        if missing_manifest_ids:
+            raise ContractError(f"Evidence references unknown SourceManifest ids: {missing_manifest_ids}")
+        case = TradeCase(
             trade_case_id=f"trade_case:{self.year}:offline:{len(evidence)}",
             status="ready_for_review",
             source_context=TradeCaseSourceContext(
@@ -192,6 +199,7 @@ class AduanaDataLake:
                 "select_records_for_domain_interpretation",
             ),
         )
+        return replace(case, core_guardrails=build_trade_case_guardrails(trade_case=case))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
