@@ -145,6 +145,58 @@ class TradeCase:
             raise ContractError("TradeCase offline runtime cannot write DB")
 
 
+@dataclass(frozen=True)
+class DataLakeReadinessReport:
+    run_id: str
+    status: str
+    year: str
+    source_zip_count: int
+    bronze_zip_count: int
+    source_bytes: int
+    bronze_bytes: int
+    source_manifests: int
+    evidence_items: int
+    xml_records_parsed: int
+    xml_parse_errors: int
+    zip_member_errors: int
+    hash_mismatches: int
+    ocr_candidates: int
+    ocr_files_processed: int
+    db_writes: int
+    network_used: bool
+    raw_files_written_to_repo: bool
+    checks: dict[str, bool]
+    next_actions: tuple[str, ...]
+
+    @property
+    def ready(self) -> bool:
+        return self.status == "ready_for_review"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "run_id": self.run_id,
+            "status": self.status,
+            "year": self.year,
+            "source_zip_count": self.source_zip_count,
+            "bronze_zip_count": self.bronze_zip_count,
+            "source_bytes": self.source_bytes,
+            "bronze_bytes": self.bronze_bytes,
+            "source_manifests": self.source_manifests,
+            "evidence_items": self.evidence_items,
+            "xml_records_parsed": self.xml_records_parsed,
+            "xml_parse_errors": self.xml_parse_errors,
+            "zip_member_errors": self.zip_member_errors,
+            "hash_mismatches": self.hash_mismatches,
+            "ocr_candidates": self.ocr_candidates,
+            "ocr_files_processed": self.ocr_files_processed,
+            "db_writes": self.db_writes,
+            "network_used": self.network_used,
+            "raw_files_written_to_repo": self.raw_files_written_to_repo,
+            "checks": self.checks,
+            "next_actions": list(self.next_actions),
+        }
+
+
 class AduanaDataLake:
     def __init__(self, root: Path | str = DEFAULT_DATALAKE_ROOT, year: str = "2026") -> None:
         self.root = Path(root)
@@ -173,6 +225,50 @@ class AduanaDataLake:
     def load_processing_summary(self) -> dict[str, Any]:
         path = self.root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
         return json.loads(path.read_text(encoding="utf-8"))
+
+    def build_readiness_report(self) -> DataLakeReadinessReport:
+        summary = self.load_processing_summary()
+        manifests = self.load_source_manifests()
+        evidence = self.load_evidence_items()
+        checks = {
+            "hashes_verified": int(summary.get("hash_mismatches", -1)) == 0,
+            "bronze_reconciled": summary.get("source_zip_count") == summary.get("bronze_zip_count")
+            and summary.get("source_bytes") == summary.get("bronze_bytes"),
+            "manifests_reconciled": int(summary.get("source_manifests", -1)) == len(manifests),
+            "evidence_reconciled": int(summary.get("evidence_items", -1)) == len(evidence),
+            "zip_members_clean": int(summary.get("zip_member_errors", -1)) == 0,
+            "xml_parse_clean": int(summary.get("xml_parse_errors", -1)) == 0,
+            "no_db_writes": int(summary.get("db_writes", -1)) == 0,
+            "no_network": summary.get("network_used") is False,
+            "no_raw_files_in_repo": summary.get("raw_files_written_to_repo") is False,
+        }
+        status = "ready_for_review" if all(checks.values()) else "attention_required"
+        return DataLakeReadinessReport(
+            run_id=_summary_str(summary, "run_id"),
+            status=status,
+            year=str(summary.get("year", self.year)),
+            source_zip_count=_summary_int(summary, "source_zip_count"),
+            bronze_zip_count=_summary_int(summary, "bronze_zip_count"),
+            source_bytes=_summary_int(summary, "source_bytes"),
+            bronze_bytes=_summary_int(summary, "bronze_bytes"),
+            source_manifests=len(manifests),
+            evidence_items=len(evidence),
+            xml_records_parsed=_summary_int(summary, "xml_records_parsed"),
+            xml_parse_errors=_summary_int(summary, "xml_parse_errors"),
+            zip_member_errors=_summary_int(summary, "zip_member_errors"),
+            hash_mismatches=_summary_int(summary, "hash_mismatches"),
+            ocr_candidates=_summary_int(summary, "ocr_candidates"),
+            ocr_files_processed=_summary_int(summary, "ocr_files_processed"),
+            db_writes=_summary_int(summary, "db_writes"),
+            network_used=summary.get("network_used") is True,
+            raw_files_written_to_repo=summary.get("raw_files_written_to_repo") is True,
+            checks=checks,
+            next_actions=(
+                "review_dua_field_catalog",
+                "select_human_review_sample",
+                "attach_evidence_pointers_to_trade_case",
+            ),
+        )
 
     def build_trade_case_from_evidence(self, limit: int | None = None) -> TradeCase:
         manifests = self.load_source_manifests()
@@ -210,3 +306,17 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
         if line.strip():
             rows.append(json.loads(line))
     return rows
+
+
+def _summary_int(summary: dict[str, Any], key: str) -> int:
+    value = summary.get(key)
+    if not isinstance(value, int):
+        raise ContractError(f"processing_summary.{key} must be an integer")
+    return value
+
+
+def _summary_str(summary: dict[str, Any], key: str) -> str:
+    value = summary.get(key)
+    if not isinstance(value, str) or not value:
+        raise ContractError(f"processing_summary.{key} must be a non-empty string")
+    return value

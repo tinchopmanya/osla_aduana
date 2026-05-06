@@ -43,14 +43,20 @@ def test_loader_builds_trade_case_from_gold_pointers(tmp_path: Path) -> None:
     evidence_root = root / "gold" / "evidence" / "2026"
     _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
     _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
 
     lake = AduanaDataLake(root=root)
     manifests = lake.load_source_manifests()
     evidence = lake.load_evidence_items()
     case = lake.build_trade_case_from_evidence()
+    readiness = lake.build_readiness_report()
 
     assert len(manifests) == 1
     assert len(evidence) == 1
+    assert readiness.ready is True
+    assert readiness.status == "ready_for_review"
+    assert readiness.checks["bronze_reconciled"] is True
+    assert readiness.to_dict()["evidence_items"] == 1
     assert case.status == "ready_for_review"
     assert case.db_writes == 0
     assert case.automatic_decision is False
@@ -76,6 +82,22 @@ def test_loader_rejects_evidence_without_source_manifest(tmp_path: Path) -> None
         lake.build_trade_case_from_evidence()
 
 
+def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root, bronze_zip_count=2)
+
+    lake = AduanaDataLake(root=root)
+    report = lake.build_readiness_report()
+
+    assert report.ready is False
+    assert report.status == "attention_required"
+    assert report.checks["bronze_reconciled"] is False
+    assert report.checks["evidence_reconciled"] is True
+
+
 def test_real_datalake_smoke_if_present() -> None:
     root = Path(r"C:\dev\osla_datalake\aduana")
     evidence_path = root / "gold" / "evidence" / "2026" / "evidence_items.jsonl"
@@ -84,11 +106,15 @@ def test_real_datalake_smoke_if_present() -> None:
 
     lake = AduanaDataLake(root=root)
     summary = lake.load_processing_summary()
+    readiness = lake.build_readiness_report()
     case = lake.build_trade_case_from_evidence(limit=5)
 
     assert summary["source_zip_count"] == 127
     assert summary["xml_records_parsed"] == 381
     assert summary["db_writes"] == 0
+    assert readiness.status == "ready_for_review"
+    assert readiness.source_manifests == 127
+    assert readiness.evidence_items == 381
     assert len(case.evidence_item_ids) == 5
     assert len(case.source_context.source_manifest_ids) >= 1
     assert case.core_guardrails["data_broker"]["source_key"] == "uy.dna.public_ftp"
@@ -142,6 +168,32 @@ def _evidence_item() -> dict[str, object]:
         "raw_xml_copied_to_gold": False,
         "automatic_decision": False,
     }
+
+
+def _write_processing_summary(root: Path, **overrides: object) -> None:
+    summary = {
+        "run_id": "aduana_2026_full_process_001",
+        "year": "2026",
+        "source_zip_count": 1,
+        "bronze_zip_count": 1,
+        "source_bytes": 123,
+        "bronze_bytes": 123,
+        "source_manifests": 1,
+        "evidence_items": 1,
+        "xml_records_parsed": 1,
+        "xml_parse_errors": 0,
+        "zip_member_errors": 0,
+        "hash_mismatches": 0,
+        "ocr_candidates": 0,
+        "ocr_files_processed": 0,
+        "db_writes": 0,
+        "network_used": False,
+        "raw_files_written_to_repo": False,
+    }
+    summary.update(overrides)
+    path = root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(summary), encoding="utf-8")
 
 
 def _trade_case_for_guardrail_test():
