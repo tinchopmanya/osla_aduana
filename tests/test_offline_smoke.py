@@ -26,6 +26,12 @@ def test_offline_guardrails_smoke_reports_safe_runtime(tmp_path: Path) -> None:
     assert report.voxbridge_policy_status == "allowed"
     assert report.data_broker_metadata_only is True
     assert report.data_broker_material_operation_allowed is False
+    assert report.broker_envelope_generated is True
+    assert report.broker_envelope_operation == "download"
+    assert report.broker_envelope_decision == "approved_sample_limited"
+    assert report.broker_envelope_resource_count == 1
+    assert report.broker_envelope_bytes_total == 123
+    assert report.broker_envelope_manifest_required is True
     assert report.raw_payload_included is False
     assert report.automatic_decision is False
     assert report.db_writes == 0
@@ -46,6 +52,9 @@ def test_offline_smoke_cli_writes_json_report(tmp_path: Path) -> None:
     assert payload["status"] == "passed"
     assert payload["selected_model_id"] == "frontier-review"
     assert payload["data_broker_material_operation_allowed"] is False
+    assert payload["broker_envelope_generated"] is True
+    assert payload["broker_envelope_operation"] == "download"
+    assert payload["broker_envelope_resource_count"] == 1
     assert payload["raw_payload_included"] is False
 
 

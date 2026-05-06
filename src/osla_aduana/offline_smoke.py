@@ -2,9 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal, Sequence
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from osla_core.base import SharedBase
+from osla_core.data_broker import BrokerDecision, BrokerOperationEnvelope, BrokerRequest, DataBrokerClient
 
 from osla_aduana.offline_runtime import AduanaDataLake, ContractError, DEFAULT_DATALAKE_ROOT
 
@@ -28,6 +35,12 @@ class AduanaOfflineSmokeReport:
     voxbridge_policy_status: str | None
     data_broker_metadata_only: bool
     data_broker_material_operation_allowed: bool
+    broker_envelope_generated: bool
+    broker_envelope_operation: str | None
+    broker_envelope_decision: str | None
+    broker_envelope_resource_count: int
+    broker_envelope_bytes_total: int
+    broker_envelope_manifest_required: bool
     raw_payload_included: bool
     automatic_decision: bool
     db_writes: int
@@ -64,6 +77,12 @@ class AduanaOfflineSmokeReport:
             f"- voxbridge_policy_status: `{self.voxbridge_policy_status}`",
             f"- data_broker_metadata_only: `{str(self.data_broker_metadata_only).lower()}`",
             f"- data_broker_material_operation_allowed: `{str(self.data_broker_material_operation_allowed).lower()}`",
+            f"- broker_envelope_generated: `{str(self.broker_envelope_generated).lower()}`",
+            f"- broker_envelope_operation: `{self.broker_envelope_operation}`",
+            f"- broker_envelope_decision: `{self.broker_envelope_decision}`",
+            f"- broker_envelope_resource_count: `{self.broker_envelope_resource_count}`",
+            f"- broker_envelope_bytes_total: `{self.broker_envelope_bytes_total}`",
+            f"- broker_envelope_manifest_required: `{str(self.broker_envelope_manifest_required).lower()}`",
             f"- raw_payload_included: `{str(self.raw_payload_included).lower()}`",
             f"- automatic_decision: `{str(self.automatic_decision).lower()}`",
             f"- db_writes: `{self.db_writes}`",
@@ -113,6 +132,28 @@ class AduanaOfflineSmokeErrorReport:
         )
 
 
+class MemorySessionManager:
+    """In-memory broker DB used only to create a smoke envelope."""
+
+    def __init__(self) -> None:
+        self.engine = create_engine("sqlite:///:memory:")
+        self.factory = sessionmaker(
+            bind=self.engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
+        )
+        SharedBase.metadata.create_all(self.engine)
+
+    @contextmanager
+    def session(self):
+        session = self.factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+
 def run_offline_guardrails_smoke(
     *,
     root: Path | str = DEFAULT_DATALAKE_ROOT,
@@ -122,6 +163,7 @@ def run_offline_guardrails_smoke(
     lake = AduanaDataLake(root=root, year=year)
     manifests = lake.load_source_manifests()
     trade_case = lake.build_trade_case_from_evidence(limit=limit)
+    broker_envelope = _build_offline_broker_envelope(trade_case=trade_case, manifests=manifests)
     guardrails = trade_case.core_guardrails
     modelops = guardrails.get("modelops", {})
     voxbridge = guardrails.get("voxbridge", {})
@@ -143,6 +185,12 @@ def run_offline_guardrails_smoke(
         voxbridge_policy_status=voxbridge.get("policy_status"),
         data_broker_metadata_only=data_broker.get("metadata_only") is True,
         data_broker_material_operation_allowed=data_broker.get("material_operation_allowed") is True,
+        broker_envelope_generated=True,
+        broker_envelope_operation=broker_envelope.proposed_operation,
+        broker_envelope_decision=broker_envelope.decision,
+        broker_envelope_resource_count=broker_envelope.resource_count,
+        broker_envelope_bytes_total=broker_envelope.bytes_total,
+        broker_envelope_manifest_required=broker_envelope.manifest_required,
         raw_payload_included=data_broker.get("raw_payload_included") is True
         or trade_case.source_context.raw_payload_embedded,
         automatic_decision=trade_case.automatic_decision or guardrails.get("automatic_decision") is True,
@@ -155,6 +203,54 @@ def run_offline_guardrails_smoke(
     if _has_blocked_flag(report):
         return _failed(report)
     return report
+
+
+def _build_offline_broker_envelope(*, trade_case, manifests) -> BrokerOperationEnvelope:
+    selected_manifest_ids = set(trade_case.source_context.source_manifest_ids)
+    selected_manifests = [
+        manifest for manifest in manifests if manifest.source_manifest_id in selected_manifest_ids
+    ]
+    manifest_payload = [
+        {
+            "resource_key": manifest.source_manifest_id,
+            "content_length_bytes": manifest.bytes,
+            "source_url": f"ftp://ftp.aduanas.gub.uy/{manifest.ftp_path}",
+        }
+        for manifest in selected_manifests
+    ]
+    total_bytes = sum(entry["content_length_bytes"] for entry in manifest_payload)
+
+    manager = MemorySessionManager()
+    broker = DataBrokerClient(manager)
+    authority = DataBrokerClient(manager, broker_authority=True)
+    request = broker.submit_request(
+        BrokerRequest(
+            requested_by="offline-runtime-smoke",
+            business_reason="Aduana offline material preflight envelope smoke",
+            vertical_slug="osla_aduana",
+            source_key=trade_case.source_context.source_key,
+            resource_count_estimate=len(manifest_payload),
+            bytes_estimate=total_bytes,
+            artifact_kinds_requested=["raw", "manifest"],
+            request_json={"runtime": "offline", "trade_case_id": trade_case.trade_case_id},
+        )
+    )
+    authority.record_decision(
+        BrokerDecision(
+            request_id=request.id,
+            decision="approved_sample_limited",
+            max_resources=len(manifest_payload),
+            max_bytes=total_bytes,
+            allowed_artifact_kinds=["raw", "manifest"],
+            decision_json={"manifest_required": True, "runtime": "offline_smoke"},
+        ),
+        actor="offline-runtime-smoke",
+    )
+    return broker.preflight_operation_envelope(
+        request.id,
+        proposed_operation="download",
+        manifest=manifest_payload,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
