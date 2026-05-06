@@ -35,10 +35,18 @@ No hace:
 - `voxbridge.policy_status = allowed`.
 - `data_broker.metadata_only = true`.
 - `data_broker.material_operation_allowed = false`.
+- `broker_envelope_generated = true`.
+- `broker_envelope.operation = download`.
+- `broker_envelope.decision = approved_sample_limited`.
+- `broker_envelope.manifest_required = true`.
 - `raw_payload_included = false`.
 - `automatic_decision = false`.
 - `final_ncm_allowed = false`.
 - `final_regime_allowed = false`.
+
+El `broker_envelope` es evidencia de preflight in-memory para auditoria: no
+ejecuta la operacion material, no abre ZIP/XML raw, no usa red y no persiste DB
+externa.
 
 Si el datalake no existe o el contrato falla, el CLI devuelve exit code `1` y
 emite un reporte `status = error` sin traceback.
