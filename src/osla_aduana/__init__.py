@@ -6,6 +6,7 @@ from osla_aduana.offline_runtime import (
     SourceManifest,
     TradeCase,
     TradeCaseSourceContext,
+    default_run_id_for_year,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "TradeCase",
     "TradeCaseSourceContext",
     "build_trade_case_guardrails",
+    "default_run_id_for_year",
 ]

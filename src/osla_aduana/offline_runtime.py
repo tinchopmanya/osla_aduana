@@ -198,9 +198,15 @@ class DataLakeReadinessReport:
 
 
 class AduanaDataLake:
-    def __init__(self, root: Path | str = DEFAULT_DATALAKE_ROOT, year: str = "2026") -> None:
+    def __init__(
+        self,
+        root: Path | str = DEFAULT_DATALAKE_ROOT,
+        year: str = "2026",
+        run_id: str | None = None,
+    ) -> None:
         self.root = Path(root)
         self.year = year
+        self.run_id = run_id or default_run_id_for_year(year)
 
     @property
     def evidence_root(self) -> Path:
@@ -223,7 +229,7 @@ class AduanaDataLake:
         ]
 
     def load_processing_summary(self) -> dict[str, Any]:
-        path = self.root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+        path = self.root / "runs" / self.run_id / "processing_summary.json"
         return json.loads(path.read_text(encoding="utf-8"))
 
     def build_readiness_report(self) -> DataLakeReadinessReport:
@@ -285,7 +291,7 @@ class AduanaDataLake:
             status="ready_for_review",
             source_context=TradeCaseSourceContext(
                 intake_channel="public_dataset_local_datalake",
-                source_run_id="aduana_2026_full_process_001",
+                source_run_id=self.run_id,
                 source_key="uy.dna.public_ftp",
                 source_manifest_ids=source_manifest_ids,
             ),
@@ -306,6 +312,13 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
         if line.strip():
             rows.append(json.loads(line))
     return rows
+
+
+def default_run_id_for_year(year: str) -> str:
+    clean_year = str(year)
+    if not clean_year.isdigit() or len(clean_year) != 4:
+        raise ContractError("year must be a four-digit string")
+    return f"aduana_{clean_year}_full_process_001"
 
 
 def _summary_int(summary: dict[str, Any], key: str) -> int:

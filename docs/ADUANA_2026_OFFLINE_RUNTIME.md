@@ -20,6 +20,9 @@ Entradas principales:
 - `gold\evidence\2026\evidence_items.jsonl`
 - `runs\aduana_2026_full_process_001\processing_summary.json`
 
+El runtime acepta `year` y `run_id` para que el mismo contrato pueda consumir
+futuros cortes 2025 o probes sin hardcodear el run 2026.
+
 ## Contratos implementados
 
 - `SourceManifest`

@@ -9,7 +9,13 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from osla_aduana import AduanaDataLake, EvidenceItem, SourceManifest, build_trade_case_guardrails  # noqa: E402
+from osla_aduana import (  # noqa: E402
+    AduanaDataLake,
+    EvidenceItem,
+    SourceManifest,
+    build_trade_case_guardrails,
+    default_run_id_for_year,
+)
 from osla_aduana.offline_runtime import ContractError  # noqa: E402
 
 
@@ -58,6 +64,7 @@ def test_loader_builds_trade_case_from_gold_pointers(tmp_path: Path) -> None:
     assert readiness.checks["bronze_reconciled"] is True
     assert readiness.to_dict()["evidence_items"] == 1
     assert case.status == "ready_for_review"
+    assert case.source_context.source_run_id == "aduana_2026_full_process_001"
     assert case.db_writes == 0
     assert case.automatic_decision is False
     assert case.source_context.raw_payload_embedded is False
@@ -96,6 +103,35 @@ def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
     assert report.status == "attention_required"
     assert report.checks["bronze_reconciled"] is False
     assert report.checks["evidence_reconciled"] is True
+
+
+def test_loader_uses_custom_year_and_run_id(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    source = _source_manifest()
+    source["year"] = "2025"
+    source["run_id"] = "aduana_2025_probe_001"
+    evidence = _evidence_item()
+    evidence["run_id"] = "aduana_2025_probe_001"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [evidence])
+    _write_processing_summary(root, year="2025", run_id="aduana_2025_probe_001")
+
+    lake = AduanaDataLake(root=root, year="2025", run_id="aduana_2025_probe_001")
+    case = lake.build_trade_case_from_evidence(limit=1)
+    readiness = lake.build_readiness_report()
+
+    assert default_run_id_for_year("2025") == "aduana_2025_full_process_001"
+    assert lake.run_id == "aduana_2025_probe_001"
+    assert case.trade_case_id == "trade_case:2025:offline:1"
+    assert case.source_context.source_run_id == "aduana_2025_probe_001"
+    assert readiness.year == "2025"
+    assert readiness.run_id == "aduana_2025_probe_001"
+
+
+def test_default_run_id_requires_four_digit_year() -> None:
+    with pytest.raises(ContractError):
+        default_run_id_for_year("25")
 
 
 def test_real_datalake_smoke_if_present() -> None:
@@ -171,8 +207,9 @@ def _evidence_item() -> dict[str, object]:
 
 
 def _write_processing_summary(root: Path, **overrides: object) -> None:
+    run_id = str(overrides.get("run_id", "aduana_2026_full_process_001"))
     summary = {
-        "run_id": "aduana_2026_full_process_001",
+        "run_id": run_id,
         "year": "2026",
         "source_zip_count": 1,
         "bronze_zip_count": 1,
@@ -191,7 +228,7 @@ def _write_processing_summary(root: Path, **overrides: object) -> None:
         "raw_files_written_to_repo": False,
     }
     summary.update(overrides)
-    path = root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+    path = root / "runs" / run_id / "processing_summary.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary), encoding="utf-8")
 
