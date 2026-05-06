@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import string
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,13 @@ def _require_int(payload: dict[str, Any], key: str) -> int:
     return value
 
 
+def _require_sha256(payload: dict[str, Any], key: str) -> str:
+    value = _require_str(payload, key)
+    if len(value) != 64 or any(char not in string.hexdigits for char in value):
+        raise ContractError(f"{key} must be a 64-character hex digest")
+    return value
+
+
 @dataclass(frozen=True)
 class SourceManifest:
     source_manifest_id: str
@@ -61,14 +69,12 @@ class SourceManifest:
             ftp_path=_require_str(payload, "ftp_path"),
             bronze_path=_require_str(payload, "bronze_path"),
             bytes=_require_int(payload, "bytes"),
-            sha256=_require_str(payload, "sha256"),
+            sha256=_require_sha256(payload, "sha256"),
             raw_copied=_require_bool(payload, "raw_copied"),
             db_writes=_require_int(payload, "db_writes"),
         )
         if item.db_writes != 0:
             raise ContractError("SourceManifest cannot declare DB writes")
-        if len(item.sha256) != 64:
-            raise ContractError("SourceManifest sha256 must be a hex digest")
         return item
 
 
@@ -98,7 +104,7 @@ class EvidenceItem:
             evidence_type=_require_str(payload, "evidence_type"),
             ftp_path=_require_str(payload, "ftp_path"),
             member_name=_require_str(payload, "member_name"),
-            member_sha256=_require_str(payload, "member_sha256"),
+            member_sha256=_require_sha256(payload, "member_sha256"),
             root_tag=_require_str(payload, "root_tag"),
             unique_field_count=_require_int(payload, "unique_field_count"),
             parsed_record_pointer=_require_str(payload, "parsed_record_pointer"),
@@ -109,8 +115,6 @@ class EvidenceItem:
             raise ContractError("EvidenceItem cannot copy raw XML into Gold")
         if item.automatic_decision:
             raise ContractError("EvidenceItem cannot declare automatic decisions")
-        if len(item.member_sha256) != 64:
-            raise ContractError("EvidenceItem member_sha256 must be a hex digest")
         return item
 
 

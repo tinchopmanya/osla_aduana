@@ -36,6 +36,8 @@ def test_offline_guardrails_smoke_reports_safe_runtime(tmp_path: Path) -> None:
     assert report.broker_envelope["source_key"] == "uy.dna.public_ftp"
     assert report.broker_envelope["vertical_slug"] == "osla_aduana"
     assert report.broker_envelope["allowed_artifact_kinds"] == ["raw", "manifest"]
+    assert report.readiness_status == "ready_for_review"
+    assert report.readiness_checks["hashes_verified"] is True
     assert report.raw_payload_included is False
     assert report.automatic_decision is False
     assert report.db_writes == 0
@@ -61,7 +63,21 @@ def test_offline_smoke_cli_writes_json_report(tmp_path: Path) -> None:
     assert payload["broker_envelope_resource_count"] == 1
     assert payload["broker_envelope"]["manifest_count"] == 1
     assert payload["broker_envelope"]["bytes_total"] == 123
+    assert payload["readiness_status"] == "ready_for_review"
+    assert payload["readiness_checks"]["no_db_writes"] is True
     assert payload["raw_payload_included"] is False
+
+
+def test_offline_guardrails_smoke_fails_when_readiness_requires_attention(tmp_path: Path) -> None:
+    root = _seed_datalake(tmp_path, hash_mismatches=1)
+
+    report = run_offline_guardrails_smoke(root=root, limit=1)
+
+    assert report.status == "failed"
+    assert report.readiness_status == "attention_required"
+    assert report.readiness_checks["hashes_verified"] is False
+    assert report.network_used is False
+    assert report.db_writes == 0
 
 
 def test_offline_smoke_cli_returns_json_error_without_traceback(tmp_path: Path, capsys) -> None:
@@ -80,7 +96,7 @@ def test_offline_smoke_cli_returns_json_error_without_traceback(tmp_path: Path, 
     assert captured.err == ""
 
 
-def _seed_datalake(root: Path) -> Path:
+def _seed_datalake(root: Path, **summary_overrides: object) -> Path:
     evidence_root = root / "gold" / "evidence" / "2026"
     evidence_root.mkdir(parents=True)
     _write_jsonl(
@@ -121,6 +137,7 @@ def _seed_datalake(root: Path) -> Path:
             }
         ],
     )
+    _write_processing_summary(root, **summary_overrides)
     return root
 
 
@@ -129,3 +146,30 @@ def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
         "".join(json.dumps(row, separators=(",", ":")) + "\n" for row in rows),
         encoding="utf-8",
     )
+
+
+def _write_processing_summary(root: Path, **overrides: object) -> None:
+    run_id = str(overrides.get("run_id", "aduana_2026_full_process_001"))
+    summary = {
+        "run_id": run_id,
+        "year": "2026",
+        "source_zip_count": 1,
+        "bronze_zip_count": 1,
+        "source_bytes": 123,
+        "bronze_bytes": 123,
+        "source_manifests": 1,
+        "evidence_items": 1,
+        "xml_records_parsed": 1,
+        "xml_parse_errors": 0,
+        "zip_member_errors": 0,
+        "hash_mismatches": 0,
+        "ocr_candidates": 0,
+        "ocr_files_processed": 0,
+        "db_writes": 0,
+        "network_used": False,
+        "raw_files_written_to_repo": False,
+    }
+    summary.update(overrides)
+    path = root / "runs" / run_id / "processing_summary.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(summary), encoding="utf-8")

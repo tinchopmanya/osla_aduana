@@ -44,6 +44,18 @@ def test_contracts_reject_db_writes_and_raw_gold_copy() -> None:
         EvidenceItem.from_dict(evidence)
 
 
+def test_contracts_reject_non_hex_sha256_digests() -> None:
+    source = _source_manifest()
+    source["sha256"] = "g" * 64
+    with pytest.raises(ContractError, match="64-character hex digest"):
+        SourceManifest.from_dict(source)
+
+    evidence = _evidence_item()
+    evidence["member_sha256"] = "z" * 64
+    with pytest.raises(ContractError, match="64-character hex digest"):
+        EvidenceItem.from_dict(evidence)
+
+
 def test_loader_builds_trade_case_from_gold_pointers(tmp_path: Path) -> None:
     root = tmp_path / "aduana"
     evidence_root = root / "gold" / "evidence" / "2026"
