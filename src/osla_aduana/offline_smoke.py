@@ -41,6 +41,7 @@ class AduanaOfflineSmokeReport:
     broker_envelope_resource_count: int
     broker_envelope_bytes_total: int
     broker_envelope_manifest_required: bool
+    broker_envelope: dict[str, object]
     raw_payload_included: bool
     automatic_decision: bool
     db_writes: int
@@ -83,6 +84,8 @@ class AduanaOfflineSmokeReport:
             f"- broker_envelope_resource_count: `{self.broker_envelope_resource_count}`",
             f"- broker_envelope_bytes_total: `{self.broker_envelope_bytes_total}`",
             f"- broker_envelope_manifest_required: `{str(self.broker_envelope_manifest_required).lower()}`",
+            f"- broker_envelope_request_id: `{self.broker_envelope.get('request_id')}`",
+            f"- broker_envelope_decision_id: `{self.broker_envelope.get('decision_id')}`",
             f"- raw_payload_included: `{str(self.raw_payload_included).lower()}`",
             f"- automatic_decision: `{str(self.automatic_decision).lower()}`",
             f"- db_writes: `{self.db_writes}`",
@@ -191,6 +194,7 @@ def run_offline_guardrails_smoke(
         broker_envelope_resource_count=broker_envelope.resource_count,
         broker_envelope_bytes_total=broker_envelope.bytes_total,
         broker_envelope_manifest_required=broker_envelope.manifest_required,
+        broker_envelope=broker_envelope.to_dict(),
         raw_payload_included=data_broker.get("raw_payload_included") is True
         or trade_case.source_context.raw_payload_embedded,
         automatic_decision=trade_case.automatic_decision or guardrails.get("automatic_decision") is True,

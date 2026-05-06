@@ -32,6 +32,10 @@ def test_offline_guardrails_smoke_reports_safe_runtime(tmp_path: Path) -> None:
     assert report.broker_envelope_resource_count == 1
     assert report.broker_envelope_bytes_total == 123
     assert report.broker_envelope_manifest_required is True
+    assert report.broker_envelope["decision"] == "approved_sample_limited"
+    assert report.broker_envelope["source_key"] == "uy.dna.public_ftp"
+    assert report.broker_envelope["vertical_slug"] == "osla_aduana"
+    assert report.broker_envelope["allowed_artifact_kinds"] == ["raw", "manifest"]
     assert report.raw_payload_included is False
     assert report.automatic_decision is False
     assert report.db_writes == 0
@@ -55,6 +59,8 @@ def test_offline_smoke_cli_writes_json_report(tmp_path: Path) -> None:
     assert payload["broker_envelope_generated"] is True
     assert payload["broker_envelope_operation"] == "download"
     assert payload["broker_envelope_resource_count"] == 1
+    assert payload["broker_envelope"]["manifest_count"] == 1
+    assert payload["broker_envelope"]["bytes_total"] == 123
     assert payload["raw_payload_included"] is False
 
 
