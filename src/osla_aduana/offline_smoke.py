@@ -42,6 +42,8 @@ class AduanaOfflineSmokeReport:
     broker_envelope_bytes_total: int
     broker_envelope_manifest_required: bool
     broker_envelope: dict[str, object]
+    readiness_status: str
+    readiness_checks: dict[str, bool]
     raw_payload_included: bool
     automatic_decision: bool
     db_writes: int
@@ -86,6 +88,7 @@ class AduanaOfflineSmokeReport:
             f"- broker_envelope_manifest_required: `{str(self.broker_envelope_manifest_required).lower()}`",
             f"- broker_envelope_request_id: `{self.broker_envelope.get('request_id')}`",
             f"- broker_envelope_decision_id: `{self.broker_envelope.get('decision_id')}`",
+            f"- readiness_status: `{self.readiness_status}`",
             f"- raw_payload_included: `{str(self.raw_payload_included).lower()}`",
             f"- automatic_decision: `{str(self.automatic_decision).lower()}`",
             f"- db_writes: `{self.db_writes}`",
@@ -164,6 +167,7 @@ def run_offline_guardrails_smoke(
     limit: int | None = 5,
 ) -> AduanaOfflineSmokeReport:
     lake = AduanaDataLake(root=root, year=year)
+    readiness = lake.build_readiness_report()
     manifests = lake.load_source_manifests()
     trade_case = lake.build_trade_case_from_evidence(limit=limit)
     broker_envelope = _build_offline_broker_envelope(trade_case=trade_case, manifests=manifests)
@@ -195,6 +199,8 @@ def run_offline_guardrails_smoke(
         broker_envelope_bytes_total=broker_envelope.bytes_total,
         broker_envelope_manifest_required=broker_envelope.manifest_required,
         broker_envelope=broker_envelope.to_dict(),
+        readiness_status=readiness.status,
+        readiness_checks=readiness.checks,
         raw_payload_included=data_broker.get("raw_payload_included") is True
         or trade_case.source_context.raw_payload_embedded,
         automatic_decision=trade_case.automatic_decision or guardrails.get("automatic_decision") is True,
@@ -202,6 +208,8 @@ def run_offline_guardrails_smoke(
         final_ncm_allowed=domain.get("final_ncm_allowed") is True,
         final_regime_allowed=domain.get("final_regime_allowed") is True,
     )
+    if not readiness.ready:
+        return _failed(report)
     if len(manifests) < len(trade_case.source_context.source_manifest_ids):
         return _failed(report)
     if _has_blocked_flag(report):
