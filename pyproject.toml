@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Offline Aduana runtime contracts for OSLA"
 requires-python = ">=3.12"
 dependencies = [
-    "osla-core @ git+https://github.com/tinchopmanya/osla-core.git@0dee8c3c5adf7de8f0452e47853fb55fc412d0f5",
+    "osla-core @ git+https://github.com/tinchopmanya/osla-core.git@07fb9924d43d96440e25b13c331a12f37d3c49c5",
 ]
 
 [project.optional-dependencies]
