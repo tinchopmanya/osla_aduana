@@ -178,6 +178,133 @@ def test_loader_rejects_cross_year_manifest_partition(tmp_path: Path) -> None:
         lake.build_readiness_report()
 
 
+def test_loader_rejects_cross_year_processing_summary(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    _write_jsonl(
+        evidence_root / "source_manifests.jsonl",
+        [_source_manifest(year="2025", run_id=run_id)],
+    )
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2026", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="processing_summary.year 2026 does not match datalake year 2025"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_processing_summary_run_id_mismatch(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    _write_jsonl(
+        evidence_root / "source_manifests.jsonl",
+        [_source_manifest(year="2025", run_id=run_id)],
+    )
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+    summary_path = root / "runs" / run_id / "processing_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["run_id"] = "aduana_2025_other_process_001"
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="processing_summary.run_id"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_cross_year_path_segments(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    source = _source_manifest(year="2025", run_id=run_id)
+    source["ftp_path"] = "DUA Diarios XML/2025/2026/dd20250101.zip"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="must not include year partition 2026"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_cross_year_zip_filename(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    source = _source_manifest(year="2025", run_id=run_id)
+    source["ftp_path"] = "DUA Diarios XML/2025/dd20260101.zip"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="file name year 2026 does not match datalake year 2025"):
+        lake.build_readiness_report()
+
+
+def test_loader_accepts_monthly_zip_filename_partition(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    source = _source_manifest(year="2025", run_id=run_id)
+    source["partition"] = "monthly_archive"
+    source["ftp_path"] = "DUA Diarios XML/2025/dm202501.zip"
+    source["bronze_path"] = (
+        r"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\2025\monthly_archive"
+        r"\dm202501.zip"
+    )
+    item = _evidence_item(year="2025", run_id=run_id)
+    item["ftp_path"] = "DUA Diarios XML/2025/dm202501.zip"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [item])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    assert lake.build_readiness_report().status == "ready_for_review"
+
+
+def test_loader_rejects_cross_year_monthly_zip_filename(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    source = _source_manifest(year="2025", run_id=run_id)
+    source["ftp_path"] = "DUA Diarios XML/2025/dm202601.zip"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="file name year 2026 does not match datalake year 2025"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_cross_year_bronze_path_segments(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    source = _source_manifest(year="2025", run_id=run_id)
+    source["bronze_path"] = (
+        r"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\2025\daily_sample"
+        r"\2026\dd20250101.zip"
+    )
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item(year="2025", run_id=run_id)])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="must not include year partition 2026"):
+        lake.build_readiness_report()
+
+
 def test_readiness_report_blocks_ocr_and_embeddings(tmp_path: Path) -> None:
     root = tmp_path / "aduana"
     evidence_root = root / "gold" / "evidence" / "2026"
