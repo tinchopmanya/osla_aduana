@@ -82,7 +82,8 @@ def test_loader_builds_trade_case_from_gold_pointers(tmp_path: Path) -> None:
     assert case.source_context.raw_payload_embedded is False
     assert case.evidence_item_ids == ("evidence:test:000001",)
     assert case.core_guardrails["contract_version"] == "aduana-core-guardrails-v0"
-    assert case.core_guardrails["modelops"]["selected_model_id"] == "frontier-review"
+    assert case.core_guardrails["modelops"]["model_route_status"] == "blocked"
+    assert case.core_guardrails["modelops"]["selected_model_id"] is None
     assert case.core_guardrails["modelops"]["human_review_required"] is True
     assert case.core_guardrails["voxbridge"]["policy_status"] == "allowed"
     assert case.core_guardrails["data_broker"]["material_operation_allowed"] is False
@@ -159,6 +160,7 @@ def test_loader_accepts_year_partitioned_synthetic_datalake(tmp_path: Path, year
     assert readiness.checks["no_db_writes"] is True
     assert readiness.checks["no_ocr_processed"] is True
     assert readiness.checks["no_embeddings_generated"] is True
+    assert readiness.checks["no_models_used"] is True
     assert case.trade_case_id == f"trade_case:{year}:offline:1"
     assert case.source_context.source_run_id == run_id
 
@@ -192,6 +194,29 @@ def test_loader_rejects_cross_year_processing_summary(tmp_path: Path) -> None:
     lake = AduanaDataLake(root=root, year="2025")
 
     with pytest.raises(ContractError, match="processing_summary.year 2026 does not match datalake year 2025"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_default_runtime_with_2025_processing_summary(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    run_id = "aduana_2026_full_process_001"
+    _write_jsonl(
+        evidence_root / "source_manifests.jsonl",
+        [_source_manifest(year="2026", run_id=run_id)],
+    )
+    _write_jsonl(
+        evidence_root / "evidence_items.jsonl",
+        [_evidence_item(year="2026", run_id=run_id)],
+    )
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(
+        ContractError,
+        match="processing_summary.year 2025 does not match datalake year 2026",
+    ):
         lake.build_readiness_report()
 
 
@@ -229,6 +254,28 @@ def test_loader_rejects_cross_year_path_segments(tmp_path: Path) -> None:
     lake = AduanaDataLake(root=root, year="2025")
 
     with pytest.raises(ContractError, match="must not include year partition 2026"):
+        lake.build_readiness_report()
+
+
+def test_loader_rejects_cross_year_evidence_ftp_path(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    run_id = "aduana_2025_full_process_001"
+    evidence = _evidence_item(year="2025", run_id=run_id)
+    evidence["ftp_path"] = "DUA Diarios XML/2026/dd20260101.zip"
+    _write_jsonl(
+        evidence_root / "source_manifests.jsonl",
+        [_source_manifest(year="2025", run_id=run_id)],
+    )
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [evidence])
+    _write_processing_summary(root, year="2025", run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(
+        ContractError,
+        match="ftp_path must start with exact year partition DUA Diarios XML/2025/",
+    ):
         lake.build_readiness_report()
 
 
@@ -320,6 +367,20 @@ def test_readiness_report_blocks_ocr_and_embeddings(tmp_path: Path) -> None:
     assert report.checks["no_embeddings_generated"] is False
 
 
+def test_readiness_report_blocks_model_use(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root, model_requests=1, model_inferences=1)
+
+    lake = AduanaDataLake(root=root)
+    report = lake.build_readiness_report()
+
+    assert report.ready is False
+    assert report.checks["no_models_used"] is False
+
+
 def test_default_run_id_requires_four_digit_year() -> None:
     with pytest.raises(ContractError):
         default_run_id_for_year("25")
@@ -356,8 +417,9 @@ def test_trade_case_guardrails_are_side_effect_free() -> None:
 
     assert guardrails["contract_version"] == "aduana-core-guardrails-v0"
     assert guardrails["automatic_decision"] is False
-    assert guardrails["modelops"]["model_route_status"] == "model_selected"
-    assert guardrails["modelops"]["selected_model_id"] == "frontier-review"
+    assert guardrails["modelops"]["model_route_status"] == "blocked"
+    assert guardrails["modelops"]["selected_model_id"] is None
+    assert guardrails["modelops"]["estimated_model_cost_usd"] == 0.0
     assert guardrails["voxbridge"]["action"] == "lookup_trade_case"
     assert guardrails["data_broker"]["metadata_only"] is True
     assert guardrails["data_broker"]["raw_payload_included"] is False

@@ -277,6 +277,8 @@ class AduanaDataLake:
             "no_ocr_processed": _summary_optional_int(summary, "ocr_files_processed") == 0,
             "no_embeddings_generated": _summary_optional_int(summary, "embeddings_generated") == 0
             and _summary_optional_int(summary, "embedding_jobs") == 0,
+            "no_models_used": _summary_optional_int(summary, "model_requests") == 0
+            and _summary_optional_int(summary, "model_inferences") == 0,
         }
         status = "ready_for_review" if all(checks.values()) else "attention_required"
         return DataLakeReadinessReport(

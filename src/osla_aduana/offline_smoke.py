@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Literal, Sequence
 
@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from osla_core.base import SharedBase
-from osla_core.data_broker import BrokerDecision, BrokerOperationEnvelope, BrokerRequest, DataBrokerClient
+from osla_core.data_broker import BrokerDecision, BrokerRequest, DataBrokerClient
 
 from osla_aduana.offline_runtime import AduanaDataLake, ContractError, DEFAULT_DATALAKE_ROOT
 
@@ -138,6 +138,46 @@ class AduanaOfflineSmokeErrorReport:
         )
 
 
+@dataclass(frozen=True)
+class OfflineBrokerMetadataEnvelope:
+    request_id: str
+    decision_id: str
+    decision: str
+    proposed_operation: str
+    vertical_slug: str | None
+    source_key: str | None
+    resource_count: int
+    bytes_total: int
+    manifest_required: bool
+    manifest_count: int
+    metadata_only: bool
+    material_operation_allowed: bool
+    requested_artifact_kinds: tuple[str, ...] = ()
+    allowed_artifact_kinds: tuple[str, ...] = ()
+    pointer_manifest: tuple[dict[str, object], ...] = field(default_factory=tuple)
+    decision_json: dict[str, object] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "request_id": self.request_id,
+            "decision_id": self.decision_id,
+            "decision": self.decision,
+            "proposed_operation": self.proposed_operation,
+            "vertical_slug": self.vertical_slug,
+            "source_key": self.source_key,
+            "resource_count": self.resource_count,
+            "bytes_total": self.bytes_total,
+            "manifest_required": self.manifest_required,
+            "manifest_count": self.manifest_count,
+            "metadata_only": self.metadata_only,
+            "material_operation_allowed": self.material_operation_allowed,
+            "requested_artifact_kinds": list(self.requested_artifact_kinds),
+            "allowed_artifact_kinds": list(self.allowed_artifact_kinds),
+            "pointer_manifest": [dict(entry) for entry in self.pointer_manifest],
+            "decision_json": dict(self.decision_json),
+        }
+
+
 class MemorySessionManager:
     """In-memory broker DB used only to create a smoke envelope."""
 
@@ -217,7 +257,7 @@ def run_offline_guardrails_smoke(
     return report
 
 
-def _build_offline_broker_envelope(*, trade_case, manifests) -> BrokerOperationEnvelope:
+def _build_offline_broker_envelope(*, trade_case, manifests) -> OfflineBrokerMetadataEnvelope:
     selected_manifest_ids = set(trade_case.source_context.source_manifest_ids)
     selected_manifests = [
         manifest for manifest in manifests if manifest.source_manifest_id in selected_manifest_ids
@@ -225,12 +265,14 @@ def _build_offline_broker_envelope(*, trade_case, manifests) -> BrokerOperationE
     manifest_payload = [
         {
             "resource_key": manifest.source_manifest_id,
-            "content_length_bytes": manifest.bytes,
-            "source_url": f"ftp://ftp.aduanas.gub.uy/{manifest.ftp_path}",
+            "source_key": manifest.source_key,
+            "ftp_path_pointer": manifest.ftp_path,
+            "bronze_path_pointer": manifest.bronze_path,
+            "declared_size_bytes": manifest.bytes,
+            "sha256": manifest.sha256,
         }
         for manifest in selected_manifests
     ]
-    total_bytes = sum(entry["content_length_bytes"] for entry in manifest_payload)
 
     manager = MemorySessionManager()
     broker = DataBrokerClient(manager)
@@ -238,30 +280,69 @@ def _build_offline_broker_envelope(*, trade_case, manifests) -> BrokerOperationE
     request = broker.submit_request(
         BrokerRequest(
             requested_by="offline-runtime-smoke",
-            business_reason="Aduana offline material preflight envelope smoke",
+            business_reason="Aduana offline metadata pointer observation smoke",
             vertical_slug="osla_aduana",
             source_key=trade_case.source_context.source_key,
             resource_count_estimate=len(manifest_payload),
-            bytes_estimate=total_bytes,
-            artifact_kinds_requested=["raw", "manifest"],
-            request_json={"runtime": "offline", "trade_case_id": trade_case.trade_case_id},
+            bytes_estimate=0,
+            artifact_kinds_requested=["metadata_pointer"],
+            request_json={
+                "runtime": "offline",
+                "trade_case_id": trade_case.trade_case_id,
+                "download_requested": False,
+                "material_operations_requested": [],
+            },
         )
     )
-    authority.record_decision(
+    decision = authority.record_decision(
         BrokerDecision(
             request_id=request.id,
-            decision="approved_sample_limited",
+            decision="approved_metadata_only",
             max_resources=len(manifest_payload),
-            max_bytes=total_bytes,
-            allowed_artifact_kinds=["raw", "manifest"],
-            decision_json={"manifest_required": True, "runtime": "offline_smoke"},
+            max_bytes=0,
+            allowed_artifact_kinds=[],
+            decision_json={
+                "runtime": "offline_smoke",
+                "metadata_only": True,
+                "manifest_required": False,
+                "allow_material_reads": False,
+                "allow_material_writes": False,
+                "allow_network_access": False,
+                "allow_db_writes": False,
+                "allow_model_use": False,
+                "allowed_operations": ["metadata_observation"],
+                "denied_operations": [
+                    "download",
+                    "storage_write",
+                    "artifact_write",
+                    "ocr",
+                    "embedding",
+                    "model",
+                    "model_route",
+                    "model_inference",
+                ],
+            },
         ),
         actor="offline-runtime-smoke",
     )
-    return broker.preflight_operation_envelope(
-        request.id,
-        proposed_operation="download",
-        manifest=manifest_payload,
+    active_decision = broker.require_active_decision(request.id, operation="metadata_observation")
+    return OfflineBrokerMetadataEnvelope(
+        request_id=str(request.id),
+        decision_id=str(decision.id or active_decision.id),
+        decision=active_decision.decision,
+        proposed_operation="metadata_observation",
+        vertical_slug=request.vertical_slug,
+        source_key=request.source_key,
+        resource_count=len(manifest_payload),
+        bytes_total=0,
+        manifest_required=False,
+        manifest_count=len(manifest_payload),
+        metadata_only=True,
+        material_operation_allowed=False,
+        requested_artifact_kinds=tuple(request.artifact_kinds_requested),
+        allowed_artifact_kinds=tuple(active_decision.allowed_artifact_kinds),
+        pointer_manifest=tuple(manifest_payload),
+        decision_json=active_decision.decision_json,
     )
 
 

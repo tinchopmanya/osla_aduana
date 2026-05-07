@@ -21,25 +21,32 @@ def test_offline_guardrails_smoke_reports_safe_runtime(tmp_path: Path) -> None:
     assert report.trade_case_id == "trade_case:2026:offline:1"
     assert report.evidence_items == 1
     assert report.source_manifests == 1
-    assert report.model_route_status == "model_selected"
-    assert report.selected_model_id == "frontier-review"
+    assert report.model_route_status == "blocked"
+    assert report.selected_model_id is None
     assert report.model_human_review_required is True
     assert report.voxbridge_action == "lookup_trade_case"
     assert report.voxbridge_policy_status == "allowed"
     assert report.data_broker_metadata_only is True
     assert report.data_broker_material_operation_allowed is False
     assert report.broker_envelope_generated is True
-    assert report.broker_envelope_operation == "download"
-    assert report.broker_envelope_decision == "approved_sample_limited"
+    assert report.broker_envelope_operation == "metadata_observation"
+    assert report.broker_envelope_decision == "approved_metadata_only"
     assert report.broker_envelope_resource_count == 1
-    assert report.broker_envelope_bytes_total == 123
-    assert report.broker_envelope_manifest_required is True
-    assert report.broker_envelope["decision"] == "approved_sample_limited"
+    assert report.broker_envelope_bytes_total == 0
+    assert report.broker_envelope_manifest_required is False
+    assert report.broker_envelope["decision"] == "approved_metadata_only"
     assert report.broker_envelope["source_key"] == "uy.dna.public_ftp"
     assert report.broker_envelope["vertical_slug"] == "osla_aduana"
-    assert report.broker_envelope["allowed_artifact_kinds"] == ["raw", "manifest"]
+    assert report.broker_envelope["metadata_only"] is True
+    assert report.broker_envelope["material_operation_allowed"] is False
+    assert report.broker_envelope["allowed_artifact_kinds"] == []
+    assert report.broker_envelope["requested_artifact_kinds"] == ["metadata_pointer"]
+    assert report.broker_envelope["decision_json"]["allow_material_reads"] is False
+    assert report.broker_envelope["decision_json"]["allow_model_use"] is False
+    assert report.broker_envelope["pointer_manifest"][0]["declared_size_bytes"] == 123
     assert report.readiness_status == "ready_for_review"
     assert report.readiness_checks["hashes_verified"] is True
+    assert report.readiness_checks["no_models_used"] is True
     assert report.raw_payload_included is False
     assert report.automatic_decision is False
     assert report.db_writes == 0
@@ -63,6 +70,7 @@ def test_offline_guardrails_smoke_supports_year_partitions(tmp_path: Path, year:
     assert report.readiness_checks["no_db_writes"] is True
     assert report.readiness_checks["no_ocr_processed"] is True
     assert report.readiness_checks["no_embeddings_generated"] is True
+    assert report.readiness_checks["no_models_used"] is True
     assert report.raw_payload_included is False
 
 
@@ -78,13 +86,16 @@ def test_offline_smoke_cli_writes_json_report(tmp_path: Path) -> None:
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["status"] == "passed"
     assert payload["year"] == "2025"
-    assert payload["selected_model_id"] == "frontier-review"
+    assert payload["model_route_status"] == "blocked"
+    assert payload["selected_model_id"] is None
     assert payload["data_broker_material_operation_allowed"] is False
     assert payload["broker_envelope_generated"] is True
-    assert payload["broker_envelope_operation"] == "download"
+    assert payload["broker_envelope_operation"] == "metadata_observation"
     assert payload["broker_envelope_resource_count"] == 1
+    assert payload["broker_envelope_bytes_total"] == 0
     assert payload["broker_envelope"]["manifest_count"] == 1
-    assert payload["broker_envelope"]["bytes_total"] == 123
+    assert payload["broker_envelope"]["bytes_total"] == 0
+    assert payload["broker_envelope"]["decision_json"]["allow_material_reads"] is False
     assert payload["readiness_status"] == "ready_for_review"
     assert payload["readiness_checks"]["no_db_writes"] is True
     assert payload["raw_payload_included"] is False
