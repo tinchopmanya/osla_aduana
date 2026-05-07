@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
@@ -47,15 +49,35 @@ def test_offline_guardrails_smoke_reports_safe_runtime(tmp_path: Path) -> None:
     assert report.storage_write_performed is False
 
 
+@pytest.mark.parametrize("year", ["2025", "2026"])
+def test_offline_guardrails_smoke_supports_year_partitions(tmp_path: Path, year: str) -> None:
+    root = _seed_datalake(tmp_path / year, year=year)
+
+    report = run_offline_guardrails_smoke(root=root, year=year, limit=1)
+
+    assert report.status == "passed"
+    assert report.year == year
+    assert report.trade_case_id == f"trade_case:{year}:offline:1"
+    assert report.readiness_status == "ready_for_review"
+    assert report.readiness_checks["no_network"] is True
+    assert report.readiness_checks["no_db_writes"] is True
+    assert report.readiness_checks["no_ocr_processed"] is True
+    assert report.readiness_checks["no_embeddings_generated"] is True
+    assert report.raw_payload_included is False
+
+
 def test_offline_smoke_cli_writes_json_report(tmp_path: Path) -> None:
-    root = _seed_datalake(tmp_path / "datalake")
+    root = _seed_datalake(tmp_path / "datalake", year="2025")
     output = tmp_path / "smoke.json"
 
-    exit_code = main(["--root", str(root), "--format", "json", "--output", str(output)])
+    exit_code = main(
+        ["--root", str(root), "--year", "2025", "--format", "json", "--output", str(output)]
+    )
 
     assert exit_code == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["status"] == "passed"
+    assert payload["year"] == "2025"
     assert payload["selected_model_id"] == "frontier-review"
     assert payload["data_broker_material_operation_allowed"] is False
     assert payload["broker_envelope_generated"] is True
@@ -96,20 +118,25 @@ def test_offline_smoke_cli_returns_json_error_without_traceback(tmp_path: Path, 
     assert captured.err == ""
 
 
-def _seed_datalake(root: Path, **summary_overrides: object) -> Path:
-    evidence_root = root / "gold" / "evidence" / "2026"
+def _seed_datalake(root: Path, year: str = "2026", **summary_overrides: object) -> Path:
+    run_id = str(summary_overrides.get("run_id", f"aduana_{year}_full_process_001"))
+    evidence_root = root / "gold" / "evidence" / year
     evidence_root.mkdir(parents=True)
     _write_jsonl(
         evidence_root / "source_manifests.jsonl",
         [
             {
                 "source_manifest_id": "source:test",
-                "run_id": "aduana_2026_full_process_001",
+                "run_id": run_id,
                 "source_key": "uy.dna.public_ftp",
-                "year": "2026",
+                "year": year,
                 "partition": "daily_sample",
-                "ftp_path": "DUA Diarios XML/2026/dd20260101.zip",
-                "bronze_path": r"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\2026\daily_sample\dd20260101.zip",
+                "ftp_path": f"DUA Diarios XML/{year}/dd{year}0101.zip",
+                "bronze_path": (
+                    rf"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\{year}"
+                    r"\daily_sample"
+                    rf"\dd{year}0101.zip"
+                ),
                 "bytes": 123,
                 "sha256": "a" * 64,
                 "raw_copied": True,
@@ -122,11 +149,11 @@ def _seed_datalake(root: Path, **summary_overrides: object) -> Path:
         [
             {
                 "evidence_item_id": "evidence:test:000001",
-                "run_id": "aduana_2026_full_process_001",
+                "run_id": run_id,
                 "source_key": "uy.dna.public_ftp",
                 "source_manifest_id": "source:test",
                 "evidence_type": "parsed_xml_pointer",
-                "ftp_path": "DUA Diarios XML/2026/dd20260101.zip",
+                "ftp_path": f"DUA Diarios XML/{year}/dd{year}0101.zip",
                 "member_name": "dua.xml",
                 "member_sha256": "b" * 64,
                 "root_tag": "ROOT",
@@ -137,7 +164,7 @@ def _seed_datalake(root: Path, **summary_overrides: object) -> Path:
             }
         ],
     )
-    _write_processing_summary(root, **summary_overrides)
+    _write_processing_summary(root, year=year, **summary_overrides)
     return root
 
 
@@ -148,11 +175,11 @@ def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     )
 
 
-def _write_processing_summary(root: Path, **overrides: object) -> None:
-    run_id = str(overrides.get("run_id", "aduana_2026_full_process_001"))
+def _write_processing_summary(root: Path, year: str = "2026", **overrides: object) -> None:
+    run_id = str(overrides.get("run_id", f"aduana_{year}_full_process_001"))
     summary = {
         "run_id": run_id,
-        "year": "2026",
+        "year": year,
         "source_zip_count": 1,
         "bronze_zip_count": 1,
         "source_bytes": 123,

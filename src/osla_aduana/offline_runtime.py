@@ -10,6 +10,7 @@ from osla_aduana.core_guardrails import build_trade_case_guardrails
 
 
 DEFAULT_DATALAKE_ROOT = Path(r"C:\dev\osla_datalake\aduana")
+SUPPORTED_DATALAKE_YEARS = ("2025", "2026")
 
 
 class ContractError(ValueError):
@@ -208,6 +209,7 @@ class AduanaDataLake:
         year: str = "2026",
         run_id: str | None = None,
     ) -> None:
+        year = validate_datalake_year(year)
         self.root = Path(root)
         self.year = year
         self.run_id = run_id or default_run_id_for_year(year)
@@ -221,16 +223,22 @@ class AduanaDataLake:
         return self.root / "silver" / "dua_parsed" / self.year
 
     def load_source_manifests(self) -> list[SourceManifest]:
-        return [
+        manifests = [
             SourceManifest.from_dict(row)
             for row in _read_jsonl(self.evidence_root / "source_manifests.jsonl")
         ]
+        for manifest in manifests:
+            self._require_source_manifest_partition(manifest)
+        return manifests
 
     def load_evidence_items(self) -> list[EvidenceItem]:
-        return [
+        evidence = [
             EvidenceItem.from_dict(row)
             for row in _read_jsonl(self.evidence_root / "evidence_items.jsonl")
         ]
+        for item in evidence:
+            self._require_evidence_partition(item)
+        return evidence
 
     def load_processing_summary(self) -> dict[str, Any]:
         path = self.root / "runs" / self.run_id / "processing_summary.json"
@@ -251,6 +259,9 @@ class AduanaDataLake:
             "no_db_writes": int(summary.get("db_writes", -1)) == 0,
             "no_network": summary.get("network_used") is False,
             "no_raw_files_in_repo": summary.get("raw_files_written_to_repo") is False,
+            "no_ocr_processed": _summary_optional_int(summary, "ocr_files_processed") == 0,
+            "no_embeddings_generated": _summary_optional_int(summary, "embeddings_generated") == 0
+            and _summary_optional_int(summary, "embedding_jobs") == 0,
         }
         status = "ready_for_review" if all(checks.values()) else "attention_required"
         return DataLakeReadinessReport(
@@ -307,6 +318,28 @@ class AduanaDataLake:
         )
         return replace(case, core_guardrails=build_trade_case_guardrails(trade_case=case))
 
+    def _require_source_manifest_partition(self, manifest: SourceManifest) -> None:
+        if manifest.year != self.year:
+            raise ContractError(
+                f"SourceManifest {manifest.source_manifest_id} year {manifest.year} "
+                f"does not match datalake year {self.year}"
+            )
+        if manifest.run_id != self.run_id:
+            raise ContractError(
+                f"SourceManifest {manifest.source_manifest_id} run_id {manifest.run_id} "
+                f"does not match runtime run_id {self.run_id}"
+            )
+        _require_path_partition(manifest.ftp_path, self.year, None, "ftp_path")
+        _require_path_partition(manifest.bronze_path, self.year, manifest.partition, "bronze_path")
+
+    def _require_evidence_partition(self, item: EvidenceItem) -> None:
+        if item.run_id != self.run_id:
+            raise ContractError(
+                f"EvidenceItem {item.evidence_item_id} run_id {item.run_id} "
+                f"does not match runtime run_id {self.run_id}"
+            )
+        _require_path_partition(item.ftp_path, self.year, None, "ftp_path")
+
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
@@ -319,14 +352,37 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def default_run_id_for_year(year: str) -> str:
+    clean_year = validate_datalake_year(year)
+    return f"aduana_{clean_year}_full_process_001"
+
+
+def validate_datalake_year(year: str) -> str:
     clean_year = str(year)
     if not clean_year.isdigit() or len(clean_year) != 4:
         raise ContractError("year must be a four-digit string")
-    return f"aduana_{clean_year}_full_process_001"
+    if clean_year not in SUPPORTED_DATALAKE_YEARS:
+        supported = ", ".join(SUPPORTED_DATALAKE_YEARS)
+        raise ContractError(f"year must be one of: {supported}")
+    return clean_year
+
+
+def _require_path_partition(path: str, year: str, partition: str | None, key: str) -> None:
+    normalized = path.replace("\\", "/")
+    if f"/{year}/" not in f"/{normalized}/":
+        raise ContractError(f"{key} must include year partition {year}")
+    if partition is not None and f"/{partition}/" not in f"/{normalized}/":
+        raise ContractError(f"{key} must include partition {partition}")
 
 
 def _summary_int(summary: dict[str, Any], key: str) -> int:
     value = summary.get(key)
+    if not isinstance(value, int):
+        raise ContractError(f"processing_summary.{key} must be an integer")
+    return value
+
+
+def _summary_optional_int(summary: dict[str, Any], key: str) -> int:
+    value = summary.get(key, 0)
     if not isinstance(value, int):
         raise ContractError(f"processing_summary.{key} must be an integer")
     return value

@@ -120,11 +120,8 @@ def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
 def test_loader_uses_custom_year_and_run_id(tmp_path: Path) -> None:
     root = tmp_path / "aduana"
     evidence_root = root / "gold" / "evidence" / "2025"
-    source = _source_manifest()
-    source["year"] = "2025"
-    source["run_id"] = "aduana_2025_probe_001"
-    evidence = _evidence_item()
-    evidence["run_id"] = "aduana_2025_probe_001"
+    source = _source_manifest(year="2025", run_id="aduana_2025_probe_001")
+    evidence = _evidence_item(year="2025", run_id="aduana_2025_probe_001")
     _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
     _write_jsonl(evidence_root / "evidence_items.jsonl", [evidence])
     _write_processing_summary(root, year="2025", run_id="aduana_2025_probe_001")
@@ -141,9 +138,67 @@ def test_loader_uses_custom_year_and_run_id(tmp_path: Path) -> None:
     assert readiness.run_id == "aduana_2025_probe_001"
 
 
+@pytest.mark.parametrize("year", ["2025", "2026"])
+def test_loader_accepts_year_partitioned_synthetic_datalake(tmp_path: Path, year: str) -> None:
+    root = tmp_path / "aduana"
+    run_id = default_run_id_for_year(year)
+    evidence_root = root / "gold" / "evidence" / year
+    source = _source_manifest(year=year, run_id=run_id)
+    evidence = _evidence_item(year=year, run_id=run_id)
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [evidence])
+    _write_processing_summary(root, year=year, run_id=run_id)
+
+    lake = AduanaDataLake(root=root, year=year)
+    readiness = lake.build_readiness_report()
+    case = lake.build_trade_case_from_evidence(limit=1)
+
+    assert readiness.ready is True
+    assert readiness.year == year
+    assert readiness.checks["no_network"] is True
+    assert readiness.checks["no_db_writes"] is True
+    assert readiness.checks["no_ocr_processed"] is True
+    assert readiness.checks["no_embeddings_generated"] is True
+    assert case.trade_case_id == f"trade_case:{year}:offline:1"
+    assert case.source_context.source_run_id == run_id
+
+
+def test_loader_rejects_cross_year_manifest_partition(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2025"
+    source = _source_manifest(year="2026", run_id="aduana_2025_full_process_001")
+    evidence = _evidence_item(year="2025", run_id="aduana_2025_full_process_001")
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [evidence])
+    _write_processing_summary(root, year="2025", run_id="aduana_2025_full_process_001")
+
+    lake = AduanaDataLake(root=root, year="2025")
+
+    with pytest.raises(ContractError, match="does not match datalake year"):
+        lake.build_readiness_report()
+
+
+def test_readiness_report_blocks_ocr_and_embeddings(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root, ocr_files_processed=1, embeddings_generated=1)
+
+    lake = AduanaDataLake(root=root)
+    report = lake.build_readiness_report()
+
+    assert report.ready is False
+    assert report.checks["no_ocr_processed"] is False
+    assert report.checks["no_embeddings_generated"] is False
+
+
 def test_default_run_id_requires_four_digit_year() -> None:
     with pytest.raises(ContractError):
         default_run_id_for_year("25")
+
+    with pytest.raises(ContractError):
+        default_run_id_for_year("2024")
 
 
 def test_real_datalake_smoke_if_present() -> None:
@@ -184,15 +239,20 @@ def test_trade_case_guardrails_are_side_effect_free() -> None:
     assert guardrails["domain_controls"]["final_regime_allowed"] is False
 
 
-def _source_manifest() -> dict[str, object]:
+def _source_manifest(year: str = "2026", run_id: str | None = None) -> dict[str, object]:
+    run_id = run_id or f"aduana_{year}_full_process_001"
     return {
         "source_manifest_id": "source:test",
-        "run_id": "aduana_2026_full_process_001",
+        "run_id": run_id,
         "source_key": "uy.dna.public_ftp",
-        "year": "2026",
+        "year": year,
         "partition": "daily_sample",
-        "ftp_path": "DUA Diarios XML/2026/dd20260101.zip",
-        "bronze_path": r"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\2026\daily_sample\dd20260101.zip",
+        "ftp_path": f"DUA Diarios XML/{year}/dd{year}0101.zip",
+        "bronze_path": (
+            rf"C:\dev\osla_datalake\aduana\bronze\uy_dna_public_ftp\{year}"
+            r"\daily_sample"
+            rf"\dd{year}0101.zip"
+        ),
         "bytes": 123,
         "sha256": "a" * 64,
         "raw_copied": True,
@@ -200,14 +260,15 @@ def _source_manifest() -> dict[str, object]:
     }
 
 
-def _evidence_item() -> dict[str, object]:
+def _evidence_item(year: str = "2026", run_id: str | None = None) -> dict[str, object]:
+    run_id = run_id or f"aduana_{year}_full_process_001"
     return {
         "evidence_item_id": "evidence:test:000001",
-        "run_id": "aduana_2026_full_process_001",
+        "run_id": run_id,
         "source_key": "uy.dna.public_ftp",
         "source_manifest_id": "source:test",
         "evidence_type": "parsed_xml_pointer",
-        "ftp_path": "DUA Diarios XML/2026/dd20260101.zip",
+        "ftp_path": f"DUA Diarios XML/{year}/dd{year}0101.zip",
         "member_name": "dua.xml",
         "member_sha256": "b" * 64,
         "root_tag": "ROOT",
