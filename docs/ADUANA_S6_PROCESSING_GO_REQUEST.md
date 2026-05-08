@@ -1,7 +1,7 @@
-# Aduana S6 Processing GO Request
+# Aduana S6 Documental GO Request
 
 Fecha: 2026-05-07
-Estado: GO request documental. No ejecuta procesamiento.
+Estado: GO request documental. No ejecuta procesamiento material.
 
 ## Rol
 
@@ -16,7 +16,8 @@ runtime offline de Aduana puede consumir despues de una entrega valida.
 
 ## Pedido
 
-Solicitar a Download Captain una entrega S6 particionada por anio para:
+Solicitar a Download Captain una entrega S6 particionada por anio para preparar
+el contrato de runtime:
 
 - `2025`
 - `2026`
@@ -46,7 +47,7 @@ runtime y el mismo valor aparece en todos los artifacts de la particion.
 
 S5 puede entregar manifests de archivo ZIP sin abrir ZIP/XML. El runtime offline
 solo requiere metadata verificable y punteros; nunca requiere payload raw dentro
-del repo.
+del repo ni copia a bronze en este GO documental.
 
 ### `SourceManifest` JSONL
 
@@ -60,10 +61,12 @@ Un registro por ZIP fuente:
   "year": "{year}",
   "partition": "daily_sample|daily_full|monthly_archive",
   "ftp_path": "DUA Diarios XML/{year}/dd{year}MMDD.zip",
-  "bronze_path": "C:\\dev\\osla_datalake\\aduana\\bronze\\uy_dna_public_ftp\\{year}\\{partition}\\dd{year}MMDD.zip",
+  "quarantine_zip_pointer": "C:\\dev\\osla_quarantine\\uy_dna_public_ftp\\s5_aduana_{year}_material_001\\dd{year}MMDD.zip",
   "bytes": 123456,
   "sha256": "64_hex_chars",
-  "raw_copied": true,
+  "material_available_in_quarantine": true,
+  "material_opened": false,
+  "raw_copied": false,
   "db_writes": 0
 }
 ```
@@ -72,18 +75,21 @@ Reglas:
 
 - `year` debe ser `2025` o `2026`.
 - `ftp_path` debe empezar exactamente con `DUA Diarios XML/{year}/`.
-- `bronze_path` debe incluir `bronze/uy_dna_public_ftp/{year}/{partition}`.
+- `quarantine_zip_pointer` debe apuntar fuera de Git y bajo
+  `C:\dev\osla_quarantine\`.
 - El nombre del ZIP debe ser `ddYYYYMMDD.zip` o `dmYYYYMM.zip`.
 - El `YYYY` del ZIP debe coincidir con `year`.
 - Ningun path puede incluir el otro anio soportado como segmento.
 - `bytes` debe ser un entero de metadata, sin copiar payload al repo.
+- `material_opened` y `raw_copied` deben ser `false` en este GO documental.
 - `sha256` debe ser hexadecimal de 64 caracteres.
 - `db_writes` debe ser `0`.
 
 ### `EvidenceItem` JSONL
 
-`EvidenceItem` pertenece a S6, no a S5, porque requiere punteros derivados del
-procesamiento autorizado. Debe contener referencias, no XML raw:
+`EvidenceItem` pertenece a S6, no a S5, porque requiere punteros derivados de
+una entrega autorizada fuera de este agente. Debe contener referencias, no XML
+raw:
 
 ```json
 {
@@ -91,13 +97,13 @@ procesamiento autorizado. Debe contener referencias, no XML raw:
   "run_id": "aduana_{year}_full_process_001",
   "source_key": "uy.dna.public_ftp",
   "source_manifest_id": "source:aduana:{year}:...",
-  "evidence_type": "parsed_xml_pointer",
+  "evidence_type": "metadata_pointer",
   "ftp_path": "DUA Diarios XML/{year}/dd{year}MMDD.zip",
-  "member_name": "member.xml",
-  "member_sha256": "64_hex_chars",
-  "root_tag": "ROOT",
+  "member_name": null,
+  "member_sha256": null,
+  "root_tag": null,
   "unique_field_count": 0,
-  "parsed_record_pointer": "silver/dua_parsed/{year}/...jsonl#N",
+  "parsed_record_pointer": null,
   "raw_xml_copied_to_gold": false,
   "automatic_decision": false
 }
@@ -107,6 +113,8 @@ Reglas:
 
 - `run_id` y `source_manifest_id` deben reconciliar contra `SourceManifest`.
 - `ftp_path` queda sujeto a las mismas reglas de particion del `year`.
+- `member_name`, `member_sha256`, `root_tag` y `parsed_record_pointer` deben
+  quedar `null` mientras no exista un GO material/procesamiento separado.
 - `raw_xml_copied_to_gold` debe ser `false`.
 - `automatic_decision` debe ser `false`.
 
@@ -116,7 +124,7 @@ Reglas:
 {
   "run_id": "aduana_{year}_full_process_001",
   "year": "{year}",
-  "source_zip_count": 0,
+  "quarantine_zip_pointer_count": 0,
   "bronze_zip_count": 0,
   "source_bytes": 0,
   "bronze_bytes": 0,
@@ -132,7 +140,9 @@ Reglas:
   "network_used": false,
   "raw_files_written_to_repo": false,
   "embeddings_generated": 0,
-  "embedding_jobs": 0
+  "embedding_jobs": 0,
+  "model_requests": 0,
+  "model_inferences": 0
 }
 ```
 
@@ -145,7 +155,8 @@ Readiness solo puede ser `ready_for_review` si:
 - `db_writes = 0`;
 - `network_used = false` en el runtime offline;
 - `raw_files_written_to_repo = false`;
-- OCR y embeddings procesados son `0`.
+- OCR y embeddings procesados son `0`;
+- requests e inferencias de modelos son `0`.
 
 ## Criterio GO/NO-GO para runtime
 
