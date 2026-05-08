@@ -14,16 +14,18 @@ Verificacion local de `C:\dev\nucleus`:
 
 - `main` / `origin/main`: `b6da69931fbeb0cc396e17bcbe2ce2a041551ab5`.
 - Branch fail-closed: `codex/data-broker-fail-closed-network-db`.
-- HEAD fail-closed local: `e8285b513b2873d155a917b5923a924bb310235d`.
+- HEAD fail-closed local S3 final: `baae625b1200a6963ee097497f1468fae62fe45e`
+  (`Bind broker decisions to source context`).
 - Version en branch fail-closed: `osla-core 0.3.8`.
-- `e8285b5` no aparece mergeado en `main` local ni en `origin/main`.
+- `baae625b1200a6963ee097497f1468fae62fe45e` no aparece mergeado en `main`
+  local ni en `origin/main`.
 
 Decision: `pyproject.toml` queda pendiente. No se actualizo el pin porque no hay
 SHA final de core mergeado localmente. Si PR #16 queda mergeado con ese SHA,
 el pin esperado seria:
 
 ```text
-osla-core @ git+https://github.com/tinchopmanya/osla-core.git@e8285b513b2873d155a917b5923a924bb310235d
+osla-core @ git+https://github.com/tinchopmanya/osla-core.git@baae625b1200a6963ee097497f1468fae62fe45e
 ```
 
 ## Cambios
