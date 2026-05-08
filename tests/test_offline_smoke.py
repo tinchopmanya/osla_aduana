@@ -9,6 +9,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
+import osla_aduana.offline_runtime as offline_runtime  # noqa: E402
 from osla_aduana.offline_smoke import main, run_offline_guardrails_smoke  # noqa: E402
 
 
@@ -113,6 +114,37 @@ def test_offline_guardrails_smoke_fails_when_readiness_requires_attention(tmp_pa
     assert report.db_writes == 0
 
 
+@pytest.mark.parametrize(
+    ("model_route_status", "selected_model_id", "human_review_required"),
+    [
+        ("model_selected", "frontier-review", True),
+        ("human_review_required", None, True),
+        ("blocked", None, False),
+    ],
+)
+def test_offline_guardrails_smoke_hard_fails_on_modelops_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    model_route_status: str,
+    selected_model_id: str | None,
+    human_review_required: bool,
+) -> None:
+    root = _seed_datalake(tmp_path)
+    _patch_guardrails_modelops(
+        monkeypatch,
+        model_route_status=model_route_status,
+        selected_model_id=selected_model_id,
+        human_review_required=human_review_required,
+    )
+
+    report = run_offline_guardrails_smoke(root=root, limit=1)
+
+    assert report.status == "failed"
+    assert report.model_route_status == model_route_status
+    assert report.selected_model_id == selected_model_id
+    assert report.model_human_review_required is human_review_required
+
+
 def test_offline_smoke_cli_returns_json_error_without_traceback(tmp_path: Path, capsys) -> None:
     missing_root = tmp_path / "missing"
 
@@ -211,3 +243,41 @@ def _write_processing_summary(root: Path, year: str = "2026", **overrides: objec
     path = root / "runs" / run_id / "processing_summary.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(summary), encoding="utf-8")
+
+
+def _patch_guardrails_modelops(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    model_route_status: str,
+    selected_model_id: str | None,
+    human_review_required: bool,
+) -> None:
+    def fake_guardrails(*, trade_case) -> dict[str, object]:
+        return {
+            "contract_version": "aduana-core-guardrails-v0",
+            "vertical_slug": "osla_aduana",
+            "trade_case_id": trade_case.trade_case_id,
+            "automatic_decision": False,
+            "modelops": {
+                "model_route_status": model_route_status,
+                "selected_model_id": selected_model_id,
+                "estimated_model_cost_usd": 0.0,
+                "human_review_required": human_review_required,
+            },
+            "voxbridge": {
+                "action": "lookup_trade_case",
+                "policy_status": "allowed",
+            },
+            "data_broker": {
+                "metadata_only": True,
+                "material_operation_allowed": False,
+                "raw_payload_included": False,
+            },
+            "domain_controls": {
+                "human_review_required": True,
+                "final_ncm_allowed": False,
+                "final_regime_allowed": False,
+            },
+        }
+
+    monkeypatch.setattr(offline_runtime, "build_trade_case_guardrails", fake_guardrails)

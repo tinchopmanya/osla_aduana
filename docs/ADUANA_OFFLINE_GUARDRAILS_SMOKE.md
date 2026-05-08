@@ -52,6 +52,10 @@ No hace:
 - `final_ncm_allowed = false`.
 - `final_regime_allowed = false`.
 
+El smoke falla (`status = failed`) si `modelops.model_route_status` deja de ser
+`blocked`, si `modelops.selected_model_id` no es `null` o si
+`modelops.human_review_required` deja de ser `true`.
+
 El `broker_envelope` es evidencia de observacion metadata-only in-memory para
 auditoria. No ejecuta operacion material, no autoriza descarga, no abre ZIP/XML
 raw, no usa red, no invoca modelos y no persiste DB externa. Los bytes de los

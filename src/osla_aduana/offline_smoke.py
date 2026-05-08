@@ -376,6 +376,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _has_blocked_flag(report: AduanaOfflineSmokeReport) -> bool:
     return (
         report.data_broker_material_operation_allowed
+        or report.model_route_status != "blocked"
+        or report.selected_model_id is not None
+        or not report.model_human_review_required
+        or _broker_decision_flag_enabled(report, "allow_model_use")
         or report.raw_payload_included
         or report.automatic_decision
         or report.db_writes != 0
@@ -384,6 +388,11 @@ def _has_blocked_flag(report: AduanaOfflineSmokeReport) -> bool:
         or report.network_used
         or report.storage_write_performed
     )
+
+
+def _broker_decision_flag_enabled(report: AduanaOfflineSmokeReport, key: str) -> bool:
+    decision_json = report.broker_envelope.get("decision_json", {})
+    return isinstance(decision_json, dict) and decision_json.get(key) is True
 
 
 def _failed(report: AduanaOfflineSmokeReport) -> AduanaOfflineSmokeReport:
