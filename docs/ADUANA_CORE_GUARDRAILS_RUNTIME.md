@@ -1,13 +1,15 @@
 # Aduana Core Guardrails Runtime
 
 Fecha: 2026-05-06
-Estado: corte v0 integrado al runtime offline.
+Estado: corte v0 integrado al runtime offline post-core fail-closed.
 
 ## Objetivo
 
-El runtime offline de Aduana consume `osla-core` 0.3.6 para adjuntar metadata de
-guardrails a cada `TradeCase` construido desde evidencia local Gold. Este corte
-no abre FTP, no descarga, no lee XML raw, no ejecuta OCR, no escribe DB y no
+El runtime offline de Aduana consume `osla-core` desde el workspace local durante
+validacion y debe pinnearse al SHA mergeado de core fail-closed antes de release.
+Adjunta metadata de guardrails a cada `TradeCase` construido desde evidencia
+local Gold. Este corte no abre FTP, no descarga, no lee XML raw, no ejecuta OCR,
+no genera embeddings, no invoca modelos, no escribe DB persistente/material y no
 genera decisiones finales.
 
 ## Superficie
@@ -19,8 +21,10 @@ genera decisiones finales.
 
 ## Guardrails Incluidos
 
-- `modelops`: ruteo deterministico a clase de modelo para `regime_review`.
-  Solo metadata; no se llama ningun proveedor.
+- `modelops`: fail-closed por defecto para `regime_review`. Sin
+  `allow_model_use=true` y `policy_reference` explicitos, el estado esperado es
+  `blocked`, `selected_model_id = null` y costo `0.0`. Solo metadata; no se
+  llama ningun proveedor.
 - `voxbridge`: policy sobre `lookup_trade_case`. Solo decision de policy; no
   existe gateway vendor real en este corte.
 - `data_broker`: postura metadata-only. Cualquier operacion material futura
@@ -33,4 +37,3 @@ genera decisiones finales.
 ## Tests
 
 - `tests/test_offline_runtime.py`
-

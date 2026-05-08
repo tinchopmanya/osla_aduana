@@ -1,7 +1,7 @@
 # Aduana Offline Guardrails Smoke
 
 Fecha: 2026-05-06
-Estado: smoke CLI local.
+Estado: smoke CLI local post-core fail-closed.
 
 ## Comando
 
@@ -23,30 +23,44 @@ No hace:
 - lectura de ZIP/XML raw;
 - OCR;
 - embeddings;
-- DB writes;
+- modelos;
+- DB writes persistentes/materiales;
 - storage writes.
 
-## Señales Verificadas
+## Senales Verificadas
 
-- `modelops.model_route_status = model_selected`.
-- `modelops.selected_model_id = frontier-review`.
+- `modelops.model_route_status = blocked`.
+- `modelops.selected_model_id = null`.
 - `modelops.human_review_required = true`.
 - `voxbridge.action = lookup_trade_case`.
 - `voxbridge.policy_status = allowed`.
 - `data_broker.metadata_only = true`.
 - `data_broker.material_operation_allowed = false`.
 - `broker_envelope_generated = true`.
-- `broker_envelope.operation = download`.
-- `broker_envelope.decision = approved_sample_limited`.
-- `broker_envelope.manifest_required = true`.
+- `broker_envelope.operation = metadata_observation`.
+- `broker_envelope.decision = approved_metadata_only`.
+- `broker_envelope.bytes_total = 0`.
+- `broker_envelope.manifest_required = false`.
+- `broker_envelope.metadata_only = true`.
+- `broker_envelope.material_operation_allowed = false`.
+- `broker_envelope.decision_json.allow_material_reads = false`.
+- `broker_envelope.decision_json.allow_network_access = false`.
+- `broker_envelope.decision_json.allow_db_writes = false`.
+- `broker_envelope.decision_json.allow_model_use = false`.
 - `raw_payload_included = false`.
 - `automatic_decision = false`.
 - `final_ncm_allowed = false`.
 - `final_regime_allowed = false`.
 
-El `broker_envelope` es evidencia de preflight in-memory para auditoria: no
-ejecuta la operacion material, no abre ZIP/XML raw, no usa red y no persiste DB
-externa.
+El smoke falla (`status = failed`) si `modelops.model_route_status` deja de ser
+`blocked`, si `modelops.selected_model_id` no es `null` o si
+`modelops.human_review_required` deja de ser `true`.
+
+El `broker_envelope` es evidencia de observacion metadata-only in-memory para
+auditoria. No ejecuta operacion material, no autoriza descarga, no abre ZIP/XML
+raw, no usa red, no invoca modelos y no persiste DB externa. Los bytes de los
+ZIP pueden aparecer solo como metadata declarada dentro de `pointer_manifest`;
+`broker_envelope.bytes_total` debe permanecer en `0`.
 
 Si el datalake no existe o el contrato falla, el CLI devuelve exit code `1` y
 emite un reporte `status = error` sin traceback.

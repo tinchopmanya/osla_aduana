@@ -144,7 +144,7 @@ db_writes_allowed: false
 storage_writes_allowed: false
 ```
 
-No se puede pasar a `approved_metadata_only_candidate` hasta cerrar lo definido en `ADUANA_FTP_SOURCE_PREREQS.md`:
+No se puede pasar a una decision `approved_metadata_only` hasta cerrar lo definido en `ADUANA_FTP_SOURCE_PREREQS.md`:
 
 - owner humano de fuente;
 - licencia/terminos por path o dataset;

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import string
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -11,6 +12,9 @@ from osla_aduana.core_guardrails import build_trade_case_guardrails
 
 DEFAULT_DATALAKE_ROOT = Path(r"C:\dev\osla_datalake\aduana")
 SUPPORTED_DATALAKE_YEARS = ("2025", "2026")
+DUA_FTP_PARENT_TEMPLATE = "DUA Diarios XML/{year}"
+DAILY_ZIP_RE = re.compile(r"^dd(?P<year>20\d{2})\d{4}\.zip$", re.IGNORECASE)
+MONTHLY_ZIP_RE = re.compile(r"^dm(?P<year>20\d{2})\d{2}\.zip$", re.IGNORECASE)
 
 
 class ContractError(ValueError):
@@ -246,6 +250,17 @@ class AduanaDataLake:
 
     def build_readiness_report(self) -> DataLakeReadinessReport:
         summary = self.load_processing_summary()
+        summary_run_id = _summary_str(summary, "run_id")
+        summary_year = _summary_year(summary)
+        if summary_run_id != self.run_id:
+            raise ContractError(
+                f"processing_summary.run_id {summary_run_id} "
+                f"does not match runtime run_id {self.run_id}"
+            )
+        if summary_year != self.year:
+            raise ContractError(
+                f"processing_summary.year {summary_year} does not match datalake year {self.year}"
+            )
         manifests = self.load_source_manifests()
         evidence = self.load_evidence_items()
         checks = {
@@ -262,12 +277,14 @@ class AduanaDataLake:
             "no_ocr_processed": _summary_optional_int(summary, "ocr_files_processed") == 0,
             "no_embeddings_generated": _summary_optional_int(summary, "embeddings_generated") == 0
             and _summary_optional_int(summary, "embedding_jobs") == 0,
+            "no_models_used": _summary_optional_int(summary, "model_requests") == 0
+            and _summary_optional_int(summary, "model_inferences") == 0,
         }
         status = "ready_for_review" if all(checks.values()) else "attention_required"
         return DataLakeReadinessReport(
-            run_id=_summary_str(summary, "run_id"),
+            run_id=summary_run_id,
             status=status,
-            year=str(summary.get("year", self.year)),
+            year=summary_year,
             source_zip_count=_summary_int(summary, "source_zip_count"),
             bronze_zip_count=_summary_int(summary, "bronze_zip_count"),
             source_bytes=_summary_int(summary, "source_bytes"),
@@ -329,8 +346,8 @@ class AduanaDataLake:
                 f"SourceManifest {manifest.source_manifest_id} run_id {manifest.run_id} "
                 f"does not match runtime run_id {self.run_id}"
             )
-        _require_path_partition(manifest.ftp_path, self.year, None, "ftp_path")
-        _require_path_partition(manifest.bronze_path, self.year, manifest.partition, "bronze_path")
+        _require_ftp_path_partition(manifest.ftp_path, self.year, "ftp_path")
+        _require_bronze_path_partition(manifest.bronze_path, self.year, manifest.partition, "bronze_path")
 
     def _require_evidence_partition(self, item: EvidenceItem) -> None:
         if item.run_id != self.run_id:
@@ -338,7 +355,7 @@ class AduanaDataLake:
                 f"EvidenceItem {item.evidence_item_id} run_id {item.run_id} "
                 f"does not match runtime run_id {self.run_id}"
             )
-        _require_path_partition(item.ftp_path, self.year, None, "ftp_path")
+        _require_ftp_path_partition(item.ftp_path, self.year, "ftp_path")
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -366,12 +383,56 @@ def validate_datalake_year(year: str) -> str:
     return clean_year
 
 
-def _require_path_partition(path: str, year: str, partition: str | None, key: str) -> None:
-    normalized = path.replace("\\", "/")
-    if f"/{year}/" not in f"/{normalized}/":
-        raise ContractError(f"{key} must include year partition {year}")
-    if partition is not None and f"/{partition}/" not in f"/{normalized}/":
-        raise ContractError(f"{key} must include partition {partition}")
+def _require_ftp_path_partition(path: str, year: str, key: str) -> None:
+    normalized = _normalize_path(path)
+    expected_prefix = f"{DUA_FTP_PARENT_TEMPLATE.format(year=year)}/"
+    if not normalized.startswith(expected_prefix):
+        raise ContractError(f"{key} must start with exact year partition {expected_prefix}")
+    _require_no_other_supported_year_segments(normalized, year, key)
+    _require_zip_filename_year(_path_segments(normalized)[-1], year, key)
+
+
+def _require_bronze_path_partition(path: str, year: str, partition: str, key: str) -> None:
+    normalized = _normalize_path(path)
+    segments = _path_segments(normalized)
+    expected_segments = ("bronze", "uy_dna_public_ftp", year, partition)
+    if not _contains_subsequence(tuple(segment.lower() for segment in segments), expected_segments):
+        expected = "/".join(expected_segments)
+        raise ContractError(f"{key} must include exact bronze partition {expected}")
+    _require_no_other_supported_year_segments(normalized, year, key)
+    _require_zip_filename_year(segments[-1], year, key)
+
+
+def _normalize_path(path: str) -> str:
+    return path.replace("\\", "/").strip("/")
+
+
+def _path_segments(path: str) -> list[str]:
+    return [segment for segment in _normalize_path(path).split("/") if segment]
+
+
+def _contains_subsequence(segments: tuple[str, ...], expected: tuple[str, ...]) -> bool:
+    if len(expected) > len(segments):
+        return False
+    return any(
+        segments[index : index + len(expected)] == expected
+        for index in range(len(segments) - len(expected) + 1)
+    )
+
+
+def _require_no_other_supported_year_segments(path: str, year: str, key: str) -> None:
+    segments = set(_path_segments(path))
+    for supported_year in SUPPORTED_DATALAKE_YEARS:
+        if supported_year != year and supported_year in segments:
+            raise ContractError(f"{key} must not include year partition {supported_year}")
+
+
+def _require_zip_filename_year(file_name: str, year: str, key: str) -> None:
+    match = DAILY_ZIP_RE.fullmatch(file_name) or MONTHLY_ZIP_RE.fullmatch(file_name)
+    if match is None:
+        raise ContractError(f"{key} file name must be an Aduana dd/dm ZIP with year {year}")
+    if match.group("year") != year:
+        raise ContractError(f"{key} file name year {match.group('year')} does not match datalake year {year}")
 
 
 def _summary_int(summary: dict[str, Any], key: str) -> int:
@@ -386,6 +447,10 @@ def _summary_optional_int(summary: dict[str, Any], key: str) -> int:
     if not isinstance(value, int):
         raise ContractError(f"processing_summary.{key} must be an integer")
     return value
+
+
+def _summary_year(summary: dict[str, Any]) -> str:
+    return validate_datalake_year(_summary_str(summary, "year"))
 
 
 def _summary_str(summary: dict[str, Any], key: str) -> str:
