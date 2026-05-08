@@ -17,15 +17,14 @@ Verificacion local de `C:\dev\nucleus`:
 - HEAD fail-closed local S3 final: `baae625b1200a6963ee097497f1468fae62fe45e`
   (`Bind broker decisions to source context`).
 - Version en branch fail-closed: `osla-core 0.3.8`.
-- `baae625b1200a6963ee097497f1468fae62fe45e` no aparece mergeado en `main`
-  local ni en `origin/main`.
+- PR #16 de `osla-core` fue mergeado a `main` con SHA final
+  `02cd169c669d0ccb911d6ef6f7b9445f7deca51b`.
 
-Decision: `pyproject.toml` queda pendiente. No se actualizo el pin porque no hay
-SHA final de core mergeado localmente. Si PR #16 queda mergeado con ese SHA,
-el pin esperado seria:
+Decision S4 post-core: `pyproject.toml` debe pinnear el SHA final mergeado de
+core:
 
 ```text
-osla-core @ git+https://github.com/tinchopmanya/osla-core.git@baae625b1200a6963ee097497f1468fae62fe45e
+osla-core @ git+https://github.com/tinchopmanya/osla-core.git@02cd169c669d0ccb911d6ef6f7b9445f7deca51b
 ```
 
 ## Cambios
@@ -110,7 +109,6 @@ Resultado: sin salida.
 
 GO condicionado para PR Aduana.
 
-Condicion bloqueante: mergear nucleus fail-closed PR #16 y actualizar el pin de
-`osla-core` al SHA final mergeado. Hasta entonces, Aduana pasa tests contra
-`C:\dev\nucleus\src` en branch fail-closed local, pero no queda lista para
-release standalone.
+Condicion bloqueante S3 cerrada en S4: nucleus fail-closed PR #16 fue mergeado
+y el pin de `osla-core` se actualiza al SHA final mergeado. Aduana debe repetir
+tests con el pin final antes de pasar PR #13 a ready.
