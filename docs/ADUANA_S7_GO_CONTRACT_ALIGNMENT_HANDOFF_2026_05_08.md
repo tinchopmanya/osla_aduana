@@ -82,7 +82,7 @@ if (Test-Path .\.venv\Scripts\python.exe) { .\.venv\Scripts\python.exe -m pytest
 Resultado literal:
 
 ```text
-37 passed, 1 skipped
+45 passed, 1 skipped
 ```
 
 Interpretacion: el worktree no tiene `.venv`; se uso
