@@ -97,7 +97,7 @@ git diff --check
 Resultado literal: sin salida. PASS.
 
 ```powershell
-Get-ChildItem -Recurse -File -Include *.zip,*.xml,*.pdf,*.csv,*.xlsx,*.parquet -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.venv\\|\\.git\\|reports\\|\\.codex_logs\\|\\.pytest_cache\\|\\.codex_tmp\\' }
+rg --files -g '*.zip' -g '*.xml' -g '*.pdf' -g '*.csv' -g '*.xlsx' -g '*.parquet' | Where-Object { $_ -notmatch '\\.venv\\|\\.git\\|reports\\|\\.codex_logs\\|\\.pytest_cache\\|\\.codex_tmp\\' }
 ```
 
 Resultado literal: sin salida. PASS.
