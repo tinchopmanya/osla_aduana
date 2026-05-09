@@ -182,7 +182,7 @@ def _seed_datalake(root: Path, year: str = "2026", **summary_overrides: object) 
                 ),
                 "bytes": 123,
                 "sha256": "a" * 64,
-                "raw_copied": True,
+                "raw_copied": False,
                 "db_writes": 0,
             }
         ],

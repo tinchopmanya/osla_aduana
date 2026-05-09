@@ -274,6 +274,7 @@ class AduanaDataLake:
             "no_db_writes": int(summary.get("db_writes", -1)) == 0,
             "no_network": summary.get("network_used") is False,
             "no_raw_files_in_repo": summary.get("raw_files_written_to_repo") is False,
+            "no_source_raw_copied": all(not manifest.raw_copied for manifest in manifests),
             "no_ocr_processed": _summary_optional_int(summary, "ocr_files_processed") == 0,
             "no_embeddings_generated": _summary_optional_int(summary, "embeddings_generated") == 0
             and _summary_optional_int(summary, "embedding_jobs") == 0,

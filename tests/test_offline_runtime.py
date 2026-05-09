@@ -44,6 +44,15 @@ def test_contracts_reject_db_writes_and_raw_gold_copy() -> None:
         EvidenceItem.from_dict(evidence)
 
 
+def test_contracts_accept_raw_copied_source_manifest_as_metadata_flag() -> None:
+    source = _source_manifest()
+    source["raw_copied"] = True
+
+    manifest = SourceManifest.from_dict(source)
+
+    assert manifest.raw_copied is True
+
+
 def test_contracts_reject_non_hex_sha256_digests() -> None:
     source = _source_manifest()
     source["sha256"] = "g" * 64
@@ -102,6 +111,23 @@ def test_loader_rejects_evidence_without_source_manifest(tmp_path: Path) -> None
         lake.build_trade_case_from_evidence()
 
 
+def test_readiness_report_flags_raw_copied_source_manifest(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    source = _source_manifest()
+    source["raw_copied"] = True
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
+
+    lake = AduanaDataLake(root=root)
+
+    report = lake.build_readiness_report()
+
+    assert report.status == "attention_required"
+    assert report.checks["no_source_raw_copied"] is False
+
+
 def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
     root = tmp_path / "aduana"
     evidence_root = root / "gold" / "evidence" / "2026"
@@ -116,6 +142,23 @@ def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
     assert report.status == "attention_required"
     assert report.checks["bronze_reconciled"] is False
     assert report.checks["evidence_reconciled"] is True
+
+
+def test_readiness_report_rejects_quarantine_zip_pointer_count_alias_only(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
+    summary_path = root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["quarantine_zip_pointer_count"] = summary.pop("source_zip_count")
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(ContractError, match=r"processing_summary\.source_zip_count must be an integer"):
+        lake.build_readiness_report()
 
 
 def test_loader_uses_custom_year_and_run_id(tmp_path: Path) -> None:
@@ -394,6 +437,13 @@ def test_real_datalake_smoke_if_present() -> None:
     evidence_path = root / "gold" / "evidence" / "2026" / "evidence_items.jsonl"
     if not evidence_path.exists():
         pytest.skip("local Aduana 2026 data lake is not present")
+    manifest_path = root / "gold" / "evidence" / "2026" / "source_manifests.jsonl"
+    if any(
+        json.loads(line).get("raw_copied") is True
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ):
+        pytest.skip("local Aduana data lake has material raw_copied manifests outside S6 documental GO")
 
     lake = AduanaDataLake(root=root)
     summary = lake.load_processing_summary()
@@ -444,7 +494,7 @@ def _source_manifest(year: str = "2026", run_id: str | None = None) -> dict[str,
         ),
         "bytes": 123,
         "sha256": "a" * 64,
-        "raw_copied": True,
+        "raw_copied": False,
         "db_writes": 0,
     }
 

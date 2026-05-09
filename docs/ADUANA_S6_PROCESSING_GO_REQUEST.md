@@ -82,6 +82,9 @@ Reglas:
 - Ningun path puede incluir el otro anio soportado como segmento.
 - `bytes` debe ser un entero de metadata, sin copiar payload al repo.
 - `material_opened` y `raw_copied` deben ser `false` en este GO documental.
+- `raw_copied=false` significa que no se copio payload raw ZIP/XML al repo,
+  Gold, Bronze ni storage propio del runtime para este GO documental. Un
+  puntero de quarantine o un `bytes` declarado no vuelven `raw_copied=true`.
 - `sha256` debe ser hexadecimal de 64 caracteres.
 - `db_writes` debe ser `0`.
 
@@ -124,7 +127,7 @@ Reglas:
 {
   "run_id": "aduana_{year}_full_process_001",
   "year": "{year}",
-  "quarantine_zip_pointer_count": 0,
+  "source_zip_count": 0,
   "bronze_zip_count": 0,
   "source_bytes": 0,
   "bronze_bytes": 0,
@@ -146,6 +149,10 @@ Reglas:
 }
 ```
 
+`source_zip_count` es el campo requerido por el runtime offline para contar
+ZIP fuente declarados. `quarantine_zip_pointer_count` no es un alias aceptado en
+este GO documental; los punteros de quarantine viven en `SourceManifest`.
+
 Readiness solo puede ser `ready_for_review` si:
 
 - summary `run_id` y `year` coinciden con el runtime;
@@ -155,6 +162,7 @@ Readiness solo puede ser `ready_for_review` si:
 - `db_writes = 0`;
 - `network_used = false` en el runtime offline;
 - `raw_files_written_to_repo = false`;
+- todo `SourceManifest.raw_copied` es `false`;
 - OCR y embeddings procesados son `0`;
 - requests e inferencias de modelos son `0`.
 
@@ -173,6 +181,8 @@ NO-GO:
 - cualquier cruce 2025/2026;
 - ZIP con anio distinto al runtime;
 - summary con `year` o `run_id` distinto;
+- summary que use `quarantine_zip_pointer_count` en vez de `source_zip_count`;
+- `SourceManifest.raw_copied=true`;
 - raw XML copiado a Gold;
 - DB writes, OCR, embeddings, modelos o decisiones automaticas;
 - material de otra vertical o rutas de Licita/TCR/Obras/Empresa.
