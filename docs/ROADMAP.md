@@ -1,5 +1,11 @@
 # ROADMAP — OslaAduana (Inteligencia Aduanera UY)
 
+> Nota 2026-05-10: este roadmap es legacy hasta su reconciliacion completa con
+> `docs/v3_canonical/`. Si contradice el pack V3, gana el pack V3. No usar este
+> archivo para reintroducir MVP de dashboard/scoring, pipeline DNA->DB sin Data
+> Broker, NCM final, regimen final, filing automatico ni decisiones aduaneras
+> automaticas.
+
 ## Estado actual
 
 MVP operativo con ingesta DNA + DGI + BCU. Scoring básico de operaciones aduaneras. Necesita ML defensibles y product surfaces.
