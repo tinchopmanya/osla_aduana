@@ -1,5 +1,10 @@
 # Producto — OslaAduana
 
+> Nota 2026-05-10: este documento es legacy hasta su reconciliacion completa
+> con `docs/v3_canonical/`. Si contradice el pack V3, gana el pack V3. No usar
+> este archivo para reintroducir dashboard, scoring legal final, NCM final,
+> filing automatico ni reemplazo del despachante.
+
 > Última actualización: 2026-04-24
 > Estado: PENDIENTE validación con despachantes
 
@@ -645,4 +650,3 @@ Gap global vs local (024): core portable (WCO Data Model 4.2.0, NCM/Sistema Armo
 ### 11. Riesgos y Mitigaciones — APPEND
 
 - IA agéntica 2026 (025): ChatGPT deep research + MCP, Claude Research 5-45 min, Gemini Deep Research Max. Resuelven bien research ad hoc, due diligence preliminar y narrativa. NO reemplazan: ingesta recurrente de fuentes locales rotas, entity resolution, monitoreo persistente, auditabilidad, workflow. Customs mejora posición relativa vs verticales textuales.
-
