@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -27,10 +28,15 @@ def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     )
 
 
-def test_contracts_reject_db_writes_and_raw_gold_copy() -> None:
+def test_contracts_reject_db_writes_and_raw_copies() -> None:
     source = _source_manifest()
     source["db_writes"] = 1
     with pytest.raises(ContractError):
+        SourceManifest.from_dict(source)
+
+    source = _source_manifest()
+    source["raw_copied"] = True
+    with pytest.raises(ContractError, match="raw_copied must be false"):
         SourceManifest.from_dict(source)
 
     evidence = _evidence_item()
@@ -116,6 +122,55 @@ def test_readiness_report_flags_summary_mismatch(tmp_path: Path) -> None:
     assert report.status == "attention_required"
     assert report.checks["bronze_reconciled"] is False
     assert report.checks["evidence_reconciled"] is True
+
+
+def test_readiness_report_requires_source_zip_count(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
+    summary_path = root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary.pop("source_zip_count")
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(ContractError, match="processing_summary.source_zip_count"):
+        lake.build_readiness_report()
+
+
+def test_readiness_report_rejects_quarantine_zip_pointer_count_alias(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [_source_manifest()])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
+    summary_path = root / "runs" / "aduana_2026_full_process_001" / "processing_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["quarantine_zip_pointer_count"] = 0
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(ContractError, match="quarantine_zip_pointer_count is not accepted"):
+        lake.build_readiness_report()
+
+
+def test_readiness_report_rejects_raw_copied_source_manifest(tmp_path: Path) -> None:
+    root = tmp_path / "aduana"
+    evidence_root = root / "gold" / "evidence" / "2026"
+    source = _source_manifest()
+    source["raw_copied"] = True
+    _write_jsonl(evidence_root / "source_manifests.jsonl", [source])
+    _write_jsonl(evidence_root / "evidence_items.jsonl", [_evidence_item()])
+    _write_processing_summary(root)
+
+    lake = AduanaDataLake(root=root)
+
+    with pytest.raises(ContractError, match="raw_copied must be false"):
+        lake.build_readiness_report()
 
 
 def test_loader_uses_custom_year_and_run_id(tmp_path: Path) -> None:
@@ -390,6 +445,9 @@ def test_default_run_id_requires_four_digit_year() -> None:
 
 
 def test_real_datalake_smoke_if_present() -> None:
+    if os.environ.get("OSLA_ADUANA_RUN_REAL_DATALAKE_SMOKE") != "1":
+        pytest.skip("real datalake smoke is opt-in because S7 tests must not touch payloads")
+
     root = Path(r"C:\dev\osla_datalake\aduana")
     evidence_path = root / "gold" / "evidence" / "2026" / "evidence_items.jsonl"
     if not evidence_path.exists():
@@ -444,7 +502,7 @@ def _source_manifest(year: str = "2026", run_id: str | None = None) -> dict[str,
         ),
         "bytes": 123,
         "sha256": "a" * 64,
-        "raw_copied": True,
+        "raw_copied": False,
         "db_writes": 0,
     }
 

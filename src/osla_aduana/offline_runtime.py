@@ -80,6 +80,8 @@ class SourceManifest:
         )
         if item.db_writes != 0:
             raise ContractError("SourceManifest cannot declare DB writes")
+        if item.raw_copied:
+            raise ContractError("SourceManifest.raw_copied must be false for S6 documental GO")
         return item
 
 
@@ -250,6 +252,7 @@ class AduanaDataLake:
 
     def build_readiness_report(self) -> DataLakeReadinessReport:
         summary = self.load_processing_summary()
+        _reject_legacy_summary_aliases(summary)
         summary_run_id = _summary_str(summary, "run_id")
         summary_year = _summary_year(summary)
         if summary_run_id != self.run_id:
@@ -440,6 +443,14 @@ def _summary_int(summary: dict[str, Any], key: str) -> int:
     if not isinstance(value, int):
         raise ContractError(f"processing_summary.{key} must be an integer")
     return value
+
+
+def _reject_legacy_summary_aliases(summary: dict[str, Any]) -> None:
+    if "quarantine_zip_pointer_count" in summary:
+        raise ContractError(
+            "processing_summary.quarantine_zip_pointer_count is not accepted; "
+            "use source_zip_count"
+        )
 
 
 def _summary_optional_int(summary: dict[str, Any], key: str) -> int:

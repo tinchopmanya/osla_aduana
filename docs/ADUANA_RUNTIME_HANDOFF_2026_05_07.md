@@ -72,7 +72,19 @@ Reglas minimas:
 - FTP path: `DUA Diarios XML/{year}/dd|dm...zip`.
 - Bronze path: `bronze/uy_dna_public_ftp/{year}/{partition}/...zip`.
 - ZIP filename year debe coincidir con `year`.
+- `processing_summary.source_zip_count` es el campo canonico requerido; no se
+  acepta `quarantine_zip_pointer_count` como alias.
 - `db_writes = 0`.
+- `SourceManifest.raw_copied = false` para el GO documental. El campo significa
+  payload raw ZIP/XML copiado por/para este carril, no un puntero externo de
+  metadata fuera de Git.
+- `EvidenceItem`, si existe, debe traer `member_name`, `member_sha256`,
+  `root_tag` y `parsed_record_pointer` como strings no vacios; no se aceptan
+  placeholders `null`.
+- `EvidenceItem.member_sha256` debe ser un digest SHA256 hexadecimal de 64
+  caracteres cuando aplique. Si no hay GO material/procesamiento separado, no
+  se emiten filas placeholder y `processing_summary.evidence_items` queda en
+  `0`.
 - `raw_xml_copied_to_gold = false` para evidence.
 - `automatic_decision = false`.
 - `raw_files_written_to_repo = false`.
@@ -88,7 +100,8 @@ docs/ADUANA_S6_PROCESSING_GO_REQUEST.md
 
 `DataLakeReadinessReport` marca `ready_for_review` solo si:
 
-- source y bronze reconciliados;
+- `source_zip_count` y `bronze_zip_count` reconciliados;
+- `source_bytes` y `bronze_bytes` reconciliados;
 - manifest count y evidence count reconciliados;
 - hashes sin mismatch;
 - ZIP members y XML parse sin errores declarados;

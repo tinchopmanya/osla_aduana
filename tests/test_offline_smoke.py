@@ -114,6 +114,17 @@ def test_offline_guardrails_smoke_fails_when_readiness_requires_attention(tmp_pa
     assert report.db_writes == 0
 
 
+def test_offline_guardrails_smoke_rejects_raw_copied_source_manifest(tmp_path: Path) -> None:
+    root = _seed_datalake(tmp_path)
+    manifest_path = root / "gold" / "evidence" / "2026" / "source_manifests.jsonl"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8").strip())
+    manifest["raw_copied"] = True
+    _write_jsonl(manifest_path, [manifest])
+
+    with pytest.raises(offline_runtime.ContractError, match="raw_copied must be false"):
+        run_offline_guardrails_smoke(root=root, limit=1)
+
+
 @pytest.mark.parametrize(
     ("model_route_status", "selected_model_id", "human_review_required"),
     [
@@ -182,7 +193,7 @@ def _seed_datalake(root: Path, year: str = "2026", **summary_overrides: object) 
                 ),
                 "bytes": 123,
                 "sha256": "a" * 64,
-                "raw_copied": True,
+                "raw_copied": False,
                 "db_writes": 0,
             }
         ],
