@@ -1,3 +1,10 @@
+---
+status: legacy_do_not_use_as_truth
+legacy_marked_at: 2026-05-12
+supersedes: C:\dev\Investigacion_Osla_consolidada\OK\verticales\osla_aduana\product.md
+reason: satellite_repo_product_docs_are_historical_runtime_context_not_current_vertical_truth
+do_not_use_for: product_truth_or_agent_context
+---
 # AGENTS.md — OslaAduana
 
 ## Identidad del proyecto
