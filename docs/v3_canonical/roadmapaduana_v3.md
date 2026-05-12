@@ -1,3 +1,11 @@
+---
+status: mirror_do_not_edit_here
+mirror_marked_at: 2026-05-12
+mirror_of: C:\dev\Investigacion_Osla_consolidada\NUEVOSDOCUMENTOS_29deabril\roadmapaduana_v3.md
+reason: V3 canonical master copy lives in Investigacion_Osla_consolidada/NUEVOSDOCUMENTOS_29deabril.
+do_not_use_for: standalone_editing
+---
+
 # ROADMAP ADUANA V3 — OSLA Aduana Trade Evidence Control Tower
 
 **Archivo:** `roadmapaduana_v3.md`
