@@ -1,3 +1,21 @@
+---
+slug: osla_aduana
+entidad: vertical
+estado_documento: mirror_do_not_edit_here
+tipo_archivo: readme
+canon_path: C:\dev\osla\osla_aduana\docs\v3_canonical\README.md
+supersedes: []
+superseded_by: null
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: true
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
+mirror_of: C:\dev\Investigacion_Osla_consolidada\NUEVOSDOCUMENTOS_29deabril\README.md
+notas: mirror of V3 canonical import
+encoding: ascii_puro
+---
 # Aduana V3 Canonical Pack
 
 Estado: canon operativo preservado desde los documentos V3 entregados por Martin.

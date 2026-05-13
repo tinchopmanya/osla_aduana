@@ -1,3 +1,21 @@
+---
+slug: osla_aduana
+entidad: vertical
+estado_documento: legacy_do_not_use_as_truth
+tipo_archivo: otro
+canon_path: C:\dev\osla\osla_aduana\docs\V3_RECONCILIATION_TODO.md
+supersedes: []
+superseded_by: C:\dev\Investigacion_Osla_consolidada\OK\verticales\osla_aduana\product.md
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: true
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
+mirror_of: null
+notas: satellite product/roadmap/agents legacy pointer
+encoding: ascii_puro
+---
 # Aduana V3 Reconciliation TODO
 
 **Estado:** guarda documental para evitar que docs legacy se usen como roadmap vigente.

@@ -1,9 +1,20 @@
 ---
-status: legacy_do_not_use_as_truth
-legacy_marked_at: 2026-05-12
-supersedes: C:\dev\Investigacion_Osla_consolidada\OK\verticales\osla_aduana\product.md
-reason: satellite_repo_product_docs_are_historical_runtime_context_not_current_vertical_truth
-do_not_use_for: product_truth_or_agent_context
+slug: osla_aduana
+entidad: vertical
+estado_documento: legacy_do_not_use_as_truth
+tipo_archivo: agents
+canon_path: C:\dev\osla\osla_aduana\AGENTS.md
+supersedes: []
+superseded_by: C:\dev\Investigacion_Osla_consolidada\OK\verticales\osla_aduana\Agents.md
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: true
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
+mirror_of: null
+notas: satellite product/roadmap/agents legacy pointer
+encoding: ascii_puro
 ---
 # AGENTS.md — OslaAduana
 

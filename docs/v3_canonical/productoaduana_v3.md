@@ -1,11 +1,21 @@
 ---
-status: mirror_do_not_edit_here
-mirror_marked_at: 2026-05-12
+slug: osla_aduana
+entidad: vertical
+estado_documento: mirror_do_not_edit_here
+tipo_archivo: otro
+canon_path: C:\dev\osla\osla_aduana\docs\v3_canonical\productoaduana_v3.md
+supersedes: []
+superseded_by: null
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: true
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
 mirror_of: C:\dev\Investigacion_Osla_consolidada\NUEVOSDOCUMENTOS_29deabril\productoaduana_v3.md
-reason: V3 canonical master copy lives in Investigacion_Osla_consolidada/NUEVOSDOCUMENTOS_29deabril.
-do_not_use_for: standalone_editing
+notas: mirror of V3 canonical import
+encoding: ascii_puro
 ---
-
 # PRODUCTO ADUANA V3 — OSLA Aduana Trade Evidence Desk
 
 **Archivo:** `productoaduana_v3.md`

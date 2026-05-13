@@ -1,3 +1,21 @@
+---
+slug: osla_aduana
+entidad: vertical
+estado_documento: research_candidate
+tipo_archivo: otro
+canon_path: C:\dev\osla\osla_aduana\docs\ADUANA_V3_S_VALIDATORS.md
+supersedes: []
+superseded_by: null
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: true
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
+mirror_of: null
+notas: unclassified satellite markdown
+encoding: ascii_puro
+---
 # Aduana V3-S Validators
 
 Fecha: 2026-05-02

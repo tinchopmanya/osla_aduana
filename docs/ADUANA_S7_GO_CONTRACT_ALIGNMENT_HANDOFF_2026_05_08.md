@@ -1,3 +1,21 @@
+---
+slug: osla_aduana
+entidad: vertical
+estado_documento: runtime_implementation_doc
+tipo_archivo: handoff
+canon_path: C:\dev\osla\osla_aduana\docs\ADUANA_S7_GO_CONTRACT_ALIGNMENT_HANDOFF_2026_05_08.md
+supersedes: []
+superseded_by: null
+fuente_de_verdad: C:\dev\Investigacion_Osla_consolidada\FUENTE_DE_VERDAD_VERTICALES.md
+no_usar_como_fuente_de_verdad: false
+updated_at: 2026-05-13T02:55:45Z
+owner: CODEX_5_5
+auto_generated: false
+disclaimers: []
+mirror_of: null
+notas: runtime/offline/handoff/contract document
+encoding: ascii_puro
+---
 # Aduana S7 GO Contract Alignment Handoff 2026-05-08
 
 Estado: S7 aplicado en runtime/tests/docs. No commit.
